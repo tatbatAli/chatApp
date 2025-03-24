@@ -57,7 +57,8 @@ function SignUpPage() {
         const user = bodyData.User_Data.username;
         dispatch(setUser(user));
         if (bodyData.success) {
-          navigate("/HomePage");
+          console.log(bodyData.success);
+          navigate("/LoginPage");
         } else {
           console.log("sign up failed", bodyData.success);
         }

@@ -9,15 +9,13 @@ import LoginPage from "./LoginPage";
 
 function App() {
   return (
-    <Provider store={store}>
-      <Routes>
-        <Route path="/HomePage" element={<HomePage />} />
-        <Route path="/" element={<SignUpPage />} />
-        <Route path="/MessagePage/:userId?" element={<Messages />} />
-        <Route path="/LoginPage" element={<LoginPage />} />
-        <Route path="/SignUp" element={<SignUpPage />} />
-      </Routes>
-    </Provider>
+    <Routes>
+      <Route path="/HomePage" element={<HomePage />} />
+      <Route path="/" element={<SignUpPage />} />
+      <Route path="/MessagePage/:userId?" element={<Messages />} />
+      <Route path="/LoginPage" element={<LoginPage />} />
+      <Route path="/SignUp" element={<SignUpPage />} />
+    </Routes>
   );
 }
 

@@ -1,34 +1,34 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
-
+import { useSelector, useDispatch } from "react-redux";
+import { authentication, loginSuccess } from "../../redux/userSlice";
+import api from "../api/api";
 function Authentication({ children }) {
   const [token, setToken] = useState();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const accessT = useSelector((state) => state.userSlice.token);
+  const dispatch = useDispatch();
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchToken = async () => {
-      try {
-        const response = await axios.get("http://localhost:5000/auth/token");
-        if (response.data.token.accessToken) {
-          setToken(response.data.token.accessToken);
-          setIsAuthenticated(true);
-        } else {
-          setToken(null);
-          setIsAuthenticated(false);
-          navigate("/SignUp");
-        }
-      } catch (error) {
+      if (accessT) {
+        console.log(accessT);
+        setToken(accessT);
+        setIsAuthenticated(true);
+        dispatch(authentication(true));
+      } else {
         setToken(null);
+        setIsAuthenticated(false);
+        dispatch(authentication(false));
       }
     };
 
     fetchToken();
-  }, []);
+  }, [accessT]);
 
   useEffect(() => {
-    const requestInterceptor = axios.interceptors.request.use(
+    const requestInterceptor = api.interceptors.request.use(
       (config) => {
         if (token) {
           config.headers["Authorization"] = `Bearer ${token}`;
@@ -42,25 +42,23 @@ function Authentication({ children }) {
       }
     );
 
-    const responseInterceptor = axios.interceptors.response.use(
+    const responseInterceptor = api.interceptors.response.use(
       (response) => response,
       async (error) => {
         if (error.response && error.response.status === 401) {
           try {
-            const newTokenResponse = await axios.post(
-              "http://localhost:5000/auth/refreshToken",
+            const newTokenResponse = await api.post(
+              "auth/refreshToken",
               {},
               { withCredentials: true }
             );
-            setToken(newTokenResponse.data.token);
+            setToken(newTokenResponse.data.accessToken);
 
             error.config.headers[
               "Authorization"
-            ] = `Bearer ${newTokenResponse.data.token}`;
+            ] = `Bearer ${newTokenResponse.data.accessToken}`;
 
-            console.log("this is refresh token inside the response", token);
-
-            return axios(error.config);
+            return api(error.config);
           } catch (error) {
             setToken(null);
           }
@@ -71,14 +69,10 @@ function Authentication({ children }) {
     );
 
     return () => {
-      axios.interceptors.request.eject(requestInterceptor);
-      axios.interceptors.response.eject(responseInterceptor);
+      api.interceptors.request.eject(requestInterceptor);
+      api.interceptors.response.eject(responseInterceptor);
     };
-  }, [token]);
-
-  if (!isAuthenticated) {
-    null;
-  }
+  }, [token, isAuthenticated]);
 
   return children;
 }

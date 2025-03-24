@@ -15,6 +15,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import Avatar from "@mui/material/Avatar";
 import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
+let username;
 
 const drawerWidth = 240;
 

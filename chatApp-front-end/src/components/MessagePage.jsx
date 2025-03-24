@@ -18,9 +18,9 @@ import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
 import { io } from "socket.io-client";
-import axios from "axios";
 import { useParams } from "react-router-dom";
-
+import { useSelector } from "react-redux";
+import api from "../api/api";
 const socket = io("http://localhost:5000");
 
 function Messages() {
@@ -29,6 +29,7 @@ function Messages() {
   const [currentUsername, setCurrentUsername] = useState("");
   const ListMessage = useRef(null);
   const { userId } = useParams();
+  const accessT = useSelector((state) => state.userSlice.token);
 
   socket.on("connect", () => {
     socket.on("recieved message", (messages) => {
@@ -39,9 +40,10 @@ function Messages() {
   useEffect(() => {
     const getUser = async () => {
       try {
-        const UserData = await axios.get(
-          `http://localhost:5000/users/${userId}`
-        );
+        const UserData = await api.get(`users/${userId}`, {
+          headers: { Authorization: `Bearer ${accessT}` },
+          withCredentials: true,
+        });
         if (UserData.data) {
           setCurrentUsername(UserData.data.username);
         } else {
@@ -96,11 +98,15 @@ function Messages() {
   useEffect(() => {
     const chekingMessages = async () => {
       try {
-        const response = await axios.get(
-          "http://localhost:5000/messages/checkMessages"
-        );
+        const response = await api.get("messages/checkMessages", {
+          headers: { Authorization: `Bearer ${accessT}` },
+          withCredentials: true,
+        });
         if (response.data.hasMessages) {
-          const messages = await axios.get("http://localhost:5000/messages");
+          const messages = await api.get("messages", {
+            headers: { Authorization: `Bearer ${accessT}` },
+            withCredentials: true,
+          });
           const fetchedData = messages.data;
           setMessages(fetchedData);
         }

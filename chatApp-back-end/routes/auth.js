@@ -2,11 +2,22 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../modules/Users.js";
-import Token from "../modules/Tokens.js";
 
 const router = express.Router();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
+const maxAge = 30 * 24 * 60 * 60 * 1000;
+const cookie = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+  maxAge: maxAge,
+};
+const clearCookie = {
+  httpOnly: true,
+  secure: true,
+  sameSite: "None",
+};
 
 router.post("/signIn", async (req, res) => {
   const { username, password } = req.body;
@@ -14,13 +25,12 @@ router.post("/signIn", async (req, res) => {
   if (!username || !password) {
     return res.status(400).json({ msg: "Missing Required Fields" });
   }
+  const userExist = await User.findOne({ username });
+  if (userExist) {
+    return res.status(400).json({ msg: "username already exists" });
+  }
 
   try {
-    const userExist = await User.findOne({ username });
-    if (userExist) {
-      return res.status(400).json({ msg: "username already exists" });
-    }
-
     const difficulty = 10;
     const hashedPassword = await bcrypt.hash(password, difficulty);
 
@@ -29,27 +39,7 @@ router.post("/signIn", async (req, res) => {
       password: hashedPassword,
     });
 
-    const payload = { username };
-
-    const accessToken = accessTokenGeneratore(payload);
-
-    const refreshToken = refreshTokenGeneratore(payload);
-
-    const userToken = await Token.create({
-      user: userData._id,
-      accessToken,
-      refreshToken,
-    });
-
-    res.cookie("authToken", refreshToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
-    });
-
-    res
-      .status(201)
-      .json({ success: true, User_Data: userData, User_Token: userToken });
+    res.status(201).json({ success: true, User_Data: userData });
   } catch (error) {
     res
       .status(400)
@@ -58,82 +48,134 @@ router.post("/signIn", async (req, res) => {
 });
 
 router.post("/login", async (req, res, next) => {
+  const { authToken } = req.cookies;
   const { username, password } = req.body;
   if (!username || !password) {
     return res.status(400).json({ msg: "Missing required fields" });
   }
 
-  try {
-    const user = await User.findOne({ username: username });
-    const isPasswordMatch = await bcrypt.compare(password, user.password);
-    console.log(user.username, isPasswordMatch);
-    if (!user || !isPasswordMatch) {
-      return res.status(400).json({ msg: "Invalid Username/Password" });
+  const foundUser = await User.findOne({ username: username });
+  if (!foundUser) {
+    return res.sendStatus(401);
+  }
+
+  const matchPwd = await bcrypt.compare(password, foundUser.password);
+  if (matchPwd) {
+    const accessToken = accessTokenGeneratore({ username: foundUser.username });
+    const newRefreshToken = refreshTokenGeneratore({
+      username: foundUser.username,
+    });
+    let newRefreshTokenArray;
+
+    if (!authToken) {
+      newRefreshTokenArray = foundUser.refreshToken;
+    } else {
+      newRefreshTokenArray = foundUser.refreshToken.filter(
+        (rt) => rt !== authToken
+      );
     }
 
-    res.status(200).json({ msg: `Welcom ${user.username}` });
-  } catch (error) {
-    res.status(400).json({ msg: error });
-  }
-});
+    const result = await User.updateOne(
+      { username: foundUser.username },
+      { $set: { refreshToken: [...newRefreshTokenArray, newRefreshToken] } }
+    );
 
-router.get("/token", async (req, res, next) => {
-  try {
-    const token = await Token.findOne({}).sort({ _id: -1 });
-    res.status(200).json({ success: true, token: token });
-  } catch (error) {
-    res.status(401).json({ success: false, err: error });
+    res.cookie("authToken", newRefreshToken, cookie);
+
+    res.status(200).json({ success: true, accessToken: accessToken });
+  } else {
+    res.status(401).json({ success: false });
   }
 });
 
 router.post("/refreshToken", async (req, res) => {
   const { authToken } = req.cookies;
-
-  const storedToken = await Token.findOne({ refreshToken: authToken });
-  if (!storedToken) {
-    return res.sendStatus(401);
+  if (!authToken) {
+    return res.status(401).json({ msg: "the authToken is null or undefined" });
   }
-  jwt.verify(authToken, REFRESH_TOKEN_SECRET, async (err, user) => {
-    if (err) return res.status(401).json({ err });
+  const refreshToken = authToken;
 
-    const newAccessToken = accessTokenGeneratore({ username: user.username });
+  const foundUser = await User.findOne({ refreshToken });
+  if (!foundUser) {
+    return res
+      .status(403)
+      .json({ msg: "user with this refrehs token doesn't exist" });
+  }
 
-    await Token.updateOne(
-      { user: storedToken.user },
-      { refreshToken: newAccessToken }
-    );
+  const newRefreshTokenArray = foundUser.refreshToken.filter(
+    (rt) => rt !== refreshToken
+  );
 
-    res.cookie("authToken", newAccessToken, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "strict",
+  jwt.verify(refreshToken, REFRESH_TOKEN_SECRET, async (err, user) => {
+    if (err || foundUser.username !== user.username) {
+      console.log("the refresh token is invalid or it expires");
+
+      const result = await User.updateOne(
+        { username: foundUser.username },
+        { $set: { refreshToken: [...newRefreshTokenArray] } }
+      );
+
+      res.clearCookie("authToken", {
+        httpOnly: true,
+        secure: true,
+        sameSite: "None",
+      });
+
+      return res
+        .status(403)
+        .json({ msg: "the refresh token is invalid or it expires" });
+    }
+
+    const accessToken = accessTokenGeneratore({
+      username: foundUser.username,
+    });
+    const newRefreshToken = refreshTokenGeneratore({
+      username: foundUser.username,
     });
 
-    res.json({ accessToken: newAccessToken });
+    const result = await User.updateOne(
+      { username: foundUser.username },
+      { $set: { refreshToken: [...newRefreshTokenArray, newRefreshToken] } }
+    );
+
+    res.cookie("authToken", newRefreshToken, cookie);
+
+    res.status(200).json({ success: true, accessToken: accessToken });
   });
 });
 
 router.post("/logout", async (req, res) => {
   const { authToken } = req.cookies;
+  if (!authToken) {
+    return res.sendStatus(204);
+  }
+  const refreshToken = authToken;
 
-  await Token.deleteOne({ refreshToken: authToken });
+  const foundUser = await User.findOne({ refreshToken });
+  if (!foundUser) {
+    res.clearCookie("authToken", clearCookie);
 
-  res.clearCookie("authToken", {
-    httpOnly: true,
-    secure: true,
-    sameSite: "strict",
-  });
+    return res.sendStatus(204);
+  }
 
-  res.status(200).json({ msg: "logged out" });
+  const result = await User.updateOne(
+    { username: foundUser.username },
+    { $pull: { refreshToken: [refreshToken] } }
+  );
+
+  res.clearCookie("authToken", clearCookie);
+
+  console.log("logout", result);
+  res.status(204).json({ msg: `${foundUser.username} Logged Out` });
 });
 
 function accessTokenGeneratore(payload) {
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: "40s" });
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: "20s" });
 }
 
 function refreshTokenGeneratore(payload) {
   return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
-    expiresIn: "2min",
+    expiresIn: "30d",
   });
 }
 

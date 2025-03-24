@@ -1,11 +1,7 @@
-import axios from "axios";
-
+import api from "../src/api/api";
 const postingMessages = async (messages) => {
   try {
-    const messageResponse = await axios.post(
-      "http://localhost:5000/messages",
-      messages
-    );
+    const messageResponse = await api.post("messages", messages);
     return messageResponse.data;
   } catch (error) {
     throw error;

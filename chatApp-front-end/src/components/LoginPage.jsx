@@ -2,10 +2,14 @@ import React, { useState } from "react";
 import Typography from "@mui/material/Typography";
 import { Box, Grid, TextField, Button } from "@mui/material";
 import postingUserLoginData from "../../Hooks/postingUserLoginData";
-
+import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { loginSuccess } from "../../redux/userSlice";
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleUserName = (e) => {
     setUsername(e.target.value);
@@ -28,6 +32,12 @@ function LoginPage() {
 
       try {
         const loginData = await postingUserLoginData(dataObject);
+        if (loginData.success) {
+          dispatch(loginSuccess(loginData.accessToken));
+          navigate("/HomePage");
+        } else {
+          console.log("no access token been provided");
+        }
       } catch (error) {
         console.log("err sending data", error);
       }
