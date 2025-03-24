@@ -8,7 +8,6 @@ function Authentication({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const accessT = useSelector((state) => state.userSlice.token);
   const dispatch = useDispatch();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchToken = async () => {
