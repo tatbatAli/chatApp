@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Typography from "@mui/material/Typography";
-import { Box, Grid, TextField, Button } from "@mui/material";
+import { Box, Grid, TextField, Button, Link } from "@mui/material";
 import postingUserLoginData from "../../Hooks/postingUserLoginData";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -8,6 +8,7 @@ import { loginSuccess } from "../../redux/userSlice";
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [email, setEmail] = useState("");
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -18,17 +19,22 @@ function LoginPage() {
   const handlePassword = (e) => {
     setPassword(e.target.value);
   };
+  const handleEmail = (e) => {
+    setEmail(e.target.value);
+  };
   const submit = async () => {
     if ([username, password].some((field) => !field.trim())) {
       alert("fill the fields");
     } else {
       const dataObject = {
         username: username,
+        email: email,
         password: password,
       };
 
       setUsername("");
       setPassword("");
+      setEmail("");
 
       try {
         const loginData = await postingUserLoginData(dataObject);
@@ -36,7 +42,7 @@ function LoginPage() {
           dispatch(loginSuccess(loginData.accessToken));
           navigate("/HomePage");
         } else {
-          console.log("no access token been provided");
+          console.log(loginData);
         }
       } catch (error) {
         console.log("err sending data", error);
@@ -85,6 +91,17 @@ function LoginPage() {
               <Grid item xs={12}>
                 <TextField
                   required
+                  id="email"
+                  label="Email"
+                  type="email"
+                  variant="filled"
+                  value={email}
+                  onChange={handleEmail}
+                />
+              </Grid>
+              <Grid item xs={12}>
+                <TextField
+                  required
                   id="password"
                   label="Password"
                   type="password"
@@ -92,6 +109,11 @@ function LoginPage() {
                   value={password}
                   onChange={handlePassword}
                 />
+              </Grid>
+              <Grid item xs={12} sx={{ color: "gray" }}>
+                <Link href="/ForgetPwd" color="primary" underline="hover">
+                  Forget Password
+                </Link>
               </Grid>
               <Grid item xs={12}>
                 <Button

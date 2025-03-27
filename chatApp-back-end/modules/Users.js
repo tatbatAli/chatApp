@@ -6,11 +6,25 @@ const UserSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    email: {
+      type: String,
+      required: true,
+    },
+
     password: {
       type: String,
       required: true,
     },
     refreshToken: [String],
+    verified: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    verificationToken: {
+      type: String,
+      required: true,
+    },
   },
   { timestamps: true }
 );

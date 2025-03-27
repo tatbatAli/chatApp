@@ -7,8 +7,8 @@ const initialState = {
   isAuthenticated: null,
 };
 
-const userSlice = createSlice({
-  name: "userSlice",
+const user = createSlice({
+  name: "user",
   initialState,
   reducers: {
     setUser: (state, action) => {
@@ -20,9 +20,12 @@ const userSlice = createSlice({
     authentication: (state, action) => {
       state.isAuthenticated = action.payload;
     },
+    logOut: (state) => {
+      (state.token = null), (state.isAuthenticated = null);
+    },
   },
 });
 
-export const { setUser, loginSuccess, authentication } = userSlice.actions;
+export const { setUser, loginSuccess, authentication, logOut } = user.actions;
 
-export default userSlice.reducer;
+export default user.reducer;

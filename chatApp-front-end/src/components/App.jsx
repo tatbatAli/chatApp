@@ -1,10 +1,10 @@
 import React from "react";
 import Messages from "./MessagePage";
 import SignUpPage from "./SignUp";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import HomePage from "./HomePage";
-import { Provider } from "react-redux";
-import store from "../../redux/store";
+import EmailVerify from "./EmailVerify";
+
 import LoginPage from "./LoginPage";
 
 function App() {
@@ -15,6 +15,7 @@ function App() {
       <Route path="/MessagePage/:userId?" element={<Messages />} />
       <Route path="/LoginPage" element={<LoginPage />} />
       <Route path="/SignUp" element={<SignUpPage />} />
+      <Route path="/auth/:id/verify/:token" element={<EmailVerify />} />
     </Routes>
   );
 }
