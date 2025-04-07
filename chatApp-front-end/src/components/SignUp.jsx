@@ -1,78 +1,64 @@
 import React, { useState } from "react";
 import Typography from "@mui/material/Typography";
 import { Box, Grid, TextField, Button } from "@mui/material";
-import postingUserSignUpData from "../../Hooks/postingUserSignUpData";
-import { useNavigate } from "react-router-dom";
-import { useDispatch } from "react-redux";
-import { loginSuccess, setUser } from "../../redux/userSlice";
 import { Link } from "@mui/material";
+import postingUserSignUpData from "../../Hooks/postingUserSignUpData";
+import usePwdValidation from "../../Hooks/usePwdValidation";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../redux/userSlice";
 
 function SignUpPage() {
   const [userData, setUserData] = useState([]);
   const [userName, setUserName] = useState("");
-  const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
   const [verificationMsg, setVerificationMsg] = useState("");
   const [errMsg, setErrMsg] = useState("");
+  const {
+    password,
+    passwordConfirmation,
+    setPassword,
+    setPasswordConfirmation,
+    handlePassword,
+    handlePasswordConfirmation,
+    validateForm,
+    err,
+  } = usePwdValidation();
   const dispatch = useDispatch();
 
   const handleUserName = (e) => {
     setUserName(e.target.value);
   };
-  const handlePassword = (e) => {
-    setPassword(e.target.value);
-  };
   const handleEmail = (e) => {
     setEmail(e.target.value);
   };
 
-  const handlePasswordConfirmation = (e) => {
-    setPasswordConfirmation(e.target.value);
-  };
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      return;
+    }
 
-  const navigate = useNavigate();
+    const dataObject = {
+      username: userName,
+      email: email,
+      password: password,
+    };
 
-  const passwordPattern =
-    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_./\'":])[A-Za-z\d!@#$%^&*()_./\'":]{8,}$/;
+    setUserData([...userData, dataObject]);
+    setUserName("");
+    setEmail("");
+    setPassword("");
+    setPasswordConfirmation("");
 
-  const submit = async () => {
-    if (
-      [userName, password, passwordConfirmation].some((field) => !field?.trim())
-    ) {
-      alert("fill the fields");
-    } else if (
-      password !== passwordConfirmation ||
-      !passwordPattern.test(password)
-    ) {
-      alert("invalid password");
-    } else {
-      const dataObject = {
-        username: userName,
-        email: email,
-        password: password,
-        passwordConfirmation: passwordConfirmation,
-      };
-
-      setUserData([...userData, dataObject]);
-      setUserName("");
-      setPassword("");
-      setEmail("");
-      setPasswordConfirmation("");
-
-      try {
-        const bodyData = await postingUserSignUpData(dataObject);
-        const user = bodyData.User_Data.username;
-        dispatch(setUser(user));
-        if (bodyData.success) {
-          console.log("signup was ", bodyData.success);
-          setVerificationMsg(bodyData.message);
-        } else {
-          console.log("sign up failed", bodyData.success, bodyData.data);
-        }
-      } catch (error) {
-        console.log("err sending user data", error.bodyData.error);
-      }
+    try {
+      const bodyData = await postingUserSignUpData(dataObject);
+      const user = bodyData.User_Data.username;
+      dispatch(setUser(user));
+      console.log("signup was ", bodyData.success);
+      setVerificationMsg(bodyData.message);
+    } catch (error) {
+      setErrMsg(error.bodyData.message || "Something went wrong");
+      console.log(error.bodyData.message || "Something went wrong");
     }
   };
 
@@ -188,7 +174,7 @@ function SignUpPage() {
                   Submit
                 </Button>
               </Grid>
-              {verificationMsg ? (
+              {verificationMsg && (
                 <Grid item xs={12}>
                   <Box
                     sx={{
@@ -204,8 +190,23 @@ function SignUpPage() {
                     </Typography>
                   </Box>
                 </Grid>
-              ) : (
-                ""
+              )}
+              {errMsg && (
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      textAlign: "center",
+                      backgroundColor: "red",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="white">
+                      {errMsg}
+                    </Typography>
+                  </Box>
+                </Grid>
               )}
             </Grid>
           </Box>

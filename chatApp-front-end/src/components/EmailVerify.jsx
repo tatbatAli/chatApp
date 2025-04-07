@@ -5,8 +5,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 function EmailVerify() {
   const [validUrl, setValidUrl] = useState(false);
-  const navigate = useNavigate();
   const { id, token } = useParams();
+  const navigate = useNavigate();
 
   const handlLoginClick = () => {
     navigate("/LoginPage");
@@ -21,7 +21,10 @@ function EmailVerify() {
         console.log(verifyRoute.data.msg);
       } catch (error) {
         setValidUrl(error.verifyRoute.data.success);
-        console.log(error.verifyRoute.data.msg);
+        console.log(
+          "Email verification failed:",
+          error.verifyRoute?.data?.msg || error.message
+        );
       }
     };
 

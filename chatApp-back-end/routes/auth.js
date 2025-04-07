@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import User from "../modules/Users.js";
 import SendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
+import verificationEmail from "../utils/verificationEmail.js";
+import forgetPwd from "../utils/forgetPwd.js";
 
 const router = express.Router();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -36,21 +38,18 @@ router.post("/signIn", async (req, res) => {
   try {
     const difficulty = 10;
     const hashedPassword = await bcrypt.hash(password, difficulty);
+    const emailToken = jwt.sign({ email }, verificationToken, {
+      expiresIn: "1h",
+    });
 
     const newUser = await User.create({
       username,
       email,
       password: hashedPassword,
-      verificationToken,
+      verificationToken: emailToken,
     });
 
-    const url = `${process.env.BASE_URL}/auth/${newUser._id}/verify/${newUser.verificationToken}`;
-
-    await SendEmail(
-      newUser.email,
-      "Verify Email",
-      `Click on this link to verify your email ${url}`
-    );
+    await verificationEmail(newUser);
 
     res.status(201).json({
       success: true,
@@ -60,7 +59,7 @@ router.post("/signIn", async (req, res) => {
   } catch (error) {
     res.status(400).json({
       success: false,
-      data: "Error occurred during sign in",
+      message: "Error occurred during sign in",
       error: error,
     });
   }
@@ -72,23 +71,41 @@ router.get("/:id/verify/:token", async (req, res, next) => {
   const user = await User.findOne({ _id: id, verificationToken: token });
   try {
     if (!user) {
-      return res.status(400).json({ msg: "Invalid Link" });
+      return res.status(400).json({ success: false, msg: "Invalid Link" });
     }
 
-    if (user.verified) {
-      return res.status(200).json({ msg: "Your email is already verified" });
-    }
+    jwt.verify(token, verificationToken, async (err, decoded) => {
+      if (err) {
+        return res.status(400).json({ msg: "The link is expired, Try again." });
+      }
 
-    await User.updateOne(
-      { _id: user._id },
-      { $set: { verified: true }, $unset: { verificationToken: "" } }
-    );
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { verified: true }, $unset: { verificationToken: "" } }
+      );
 
-    res.status(200).json({ success: true, msg: "Email Sent Successfully" });
+      res.status(200).json({ success: true, msg: "Email Sent Successfully" });
+    });
   } catch (error) {
     res
       .status(500)
       .json({ success: false, msg: "err in the verify route", error });
+  }
+});
+
+router.get("/:id/notMe", async (req, res, next) => {
+  const id = req.params.id;
+  try {
+    const user = await User.findOne({ _id: id });
+    if (!user) {
+      return res.status(404).json({ msg: "User Not Found" });
+    }
+
+    await User.deleteOne({ _id: id });
+
+    res.status(200).json({ success: true, msg: "Verification Canceled" });
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Server error", error });
   }
 });
 
@@ -109,23 +126,21 @@ router.post("/login", async (req, res, next) => {
     return res.status(401).json({ msg: "Invalid password" });
   }
   if (!foundUser.verified) {
-    let token = foundUser.verificationToken;
-    if (!token) {
-      token = await User.updateOne(
-        { _id: foundUser._id },
-        { $set: { verificationToken: verificationToken } }
-      );
-    }
-    const url = `${process.env.BASE_URL}/auth/${foundUser._id}/verify/${foundUser.verificationToken}`;
+    const emailToken = jwt.sign({ email: foundUser.email }, verificationToken, {
+      expiresIn: "1h",
+    });
 
-    await SendEmail(
-      foundUser.email,
-      "Verify Email",
-      `Click on this link to verify your email ${url}`
+    await User.updateOne(
+      { _id: foundUser._id },
+      { $set: { verificationToken: emailToken } }
     );
-    return res
-      .status(200)
-      .json({ message: "Email Sent To Your Account. Please Verify it" });
+
+    await verificationEmail(foundUser);
+
+    return res.status(200).json({
+      success: true,
+      msg: "Email Sent To Your Account. Please Verify it",
+    });
   }
 
   const payload = { username: foundUser.username, email: foundUser.email };
@@ -143,16 +158,9 @@ router.post("/login", async (req, res, next) => {
     );
   }
 
-  console.log(newRefreshToken, newRefreshTokenArray);
-
   const result = await User.updateOne(
     { username: foundUser.username },
     { $set: { refreshToken: [...newRefreshTokenArray, newRefreshToken] } }
-  );
-
-  console.log(
-    "this is result of the login",
-    await User.findOne({ refreshToken: newRefreshToken })
   );
 
   res.cookie("authToken", newRefreshToken, cookie);
@@ -218,6 +226,56 @@ router.post("/refreshToken", async (req, res) => {
   });
 });
 
+router.post("/forgetPwd", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ msg: "email is invalid" });
+    }
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(400).json({ msg: "there's no user with this emaiil" });
+    }
+
+    await forgetPwd(user);
+
+    res
+      .status(200)
+      .json({ success: true, msg: "Password reset sent successfully" });
+  } catch (error) {
+    res.status(500).json({ success: false, msg: "Something went wrong" });
+  }
+});
+
+router.post("/:id/resetPwd", async (req, res, next) => {
+  const { password } = req.body;
+  const { id } = req.params;
+  const user = await User.findById(id);
+  if (!user) {
+    return res
+      .status(400)
+      .json({ success: false, msg: "there's no user with such id" });
+  }
+  if (!password) {
+    return res.status(200).json({ success: false, msg: "password is invalid" });
+  }
+  try {
+    const difficulty = 10;
+    const hashedPassword = await bcrypt.hash(password, difficulty);
+
+    const update = await User.updateOne(
+      { _id: id },
+      { $set: { password: hashedPassword } }
+    );
+
+    return res
+      .status(200)
+      .json({ success: true, msg: "password update successfully" });
+  } catch (error) {
+    res.status(500).json({ msg: "server err" });
+  }
+});
+
 router.post("/logout", async (req, res) => {
   const { authToken } = req.cookies;
   if (!authToken) {
@@ -234,13 +292,13 @@ router.post("/logout", async (req, res) => {
 
   const result = await User.updateOne(
     { username: foundUser.username },
-    { $pull: { refreshToken: [refreshToken] } }
+    { $pull: { refreshToken: refreshToken } }
   );
 
   res.clearCookie("authToken", clearCookie);
 
   console.log("logout", result);
-  res.status(204).json({ msg: `${foundUser.username} Logged Out` });
+  res.status(204).json({ msg: `Logged Out` });
 });
 
 function accessTokenGeneratore(payload) {

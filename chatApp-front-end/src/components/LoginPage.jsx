@@ -9,6 +9,9 @@ function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
+  const [faildedMsg, setFaildedMsg] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -35,17 +38,21 @@ function LoginPage() {
       setUsername("");
       setPassword("");
       setEmail("");
+      setLoading(true);
 
       try {
         const loginData = await postingUserLoginData(dataObject);
         if (loginData.success) {
           dispatch(loginSuccess(loginData.accessToken));
+          setSuccessMsg(loginData.msg);
           navigate("/HomePage");
         } else {
           console.log(loginData);
         }
       } catch (error) {
         console.log("err sending data", error);
+      } finally {
+        setLoading(false);
       }
     }
   };

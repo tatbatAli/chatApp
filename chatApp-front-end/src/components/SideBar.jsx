@@ -61,7 +61,7 @@ function SideBar() {
       <Divider />
       <ListItem
         component={Link}
-        to="/logout"
+        to="/LogOut"
         sx={{
           color: "inherit",
           textDecoration: "none",

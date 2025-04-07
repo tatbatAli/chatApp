@@ -1,16 +1,36 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TextField, Button, Box, Typography } from "@mui/material";
 import api from "../api/api";
+import { useParams } from "react-router-dom";
 
 function ForgetPwd() {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
+    setLoading(true);
+
+    try {
+      const url = `auth/forgetPwd`;
+      const forgetRoute = await api.post(
+        url,
+        { email },
+        {
+          withCredentials: true,
+        }
+      );
+      console.log(forgetRoute.data.success, forgetRoute.data.msg);
+      setMessage(forgetRoute.data.msg);
+    } catch (error) {
+      console.log(error.forgetRoute?.data?.msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -37,14 +57,16 @@ function ForgetPwd() {
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
+          disabled={loading}
         />
         <Button
           fullWidth
           type="submit"
           variant="contained"
-          sx={{ mt: 2, backgroundColor: "#3bb19b" }}
+          disabled={loading}
+          sx={{ mt: 2, backgroundColor: "lightblue" }}
         >
-          Send Reset Link
+          {loading ? "Sending..." : "Send Reset Link"}
         </Button>
       </Box>
       {message && <Typography color="green">{message}</Typography>}

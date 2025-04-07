@@ -4,8 +4,10 @@ import SignUpPage from "./SignUp";
 import { Route, Routes } from "react-router-dom";
 import HomePage from "./HomePage";
 import EmailVerify from "./EmailVerify";
-
+import ForgetPwd from "./ForgetPwd";
+import ResetPwd from "./ResetPwd";
 import LoginPage from "./LoginPage";
+import Logout from "./LogOut";
 
 function App() {
   return (
@@ -16,6 +18,9 @@ function App() {
       <Route path="/LoginPage" element={<LoginPage />} />
       <Route path="/SignUp" element={<SignUpPage />} />
       <Route path="/auth/:id/verify/:token" element={<EmailVerify />} />
+      <Route path="/ForgetPwd" element={<ForgetPwd />} />
+      <Route path="/auth/:id/resetPwd" element={<ResetPwd />} />
+      <Route path="/LogOut" element={<Logout />} />
     </Routes>
   );
 }
