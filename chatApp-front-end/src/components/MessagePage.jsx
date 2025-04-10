@@ -25,37 +25,49 @@ const socket = io("http://localhost:5000");
 
 function Messages() {
   const [messages, setMessages] = useState([]);
+  const [recentUsers, setRecentUsers] = useState([]);
   const [textMessage, setTextMessage] = useState("");
   const [currentUsername, setCurrentUsername] = useState("");
   const ListMessage = useRef(null);
   const { userId } = useParams();
   const accessT = useSelector((state) => state.userSlice.token);
 
-  socket.on("connect", () => {
-    socket.on("recieved message", (messages) => {
-      setMessages(messages);
+  useEffect(() => {
+    socket.on("connect", () => {
+      socket.on("recieved message", (messages) => {
+        setMessages(messages);
+      });
     });
-  });
+
+    return () => {
+      // Cleanup socket events on unmount
+      socket.off("recieved message");
+    };
+  }, []);
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const UserData = await api.get(`users/${userId}`, {
-          headers: { Authorization: `Bearer ${accessT}` },
-          withCredentials: true,
-        });
+        const UserData = await api.get(`users/userName/${userId}`);
+
         if (UserData.data) {
-          setCurrentUsername(UserData.data.username);
+          const username = UserData.data.name;
+          setCurrentUsername(username);
+          setRecentUsers((prev) => {
+            const update = [username, ...prev.filter((u) => u !== username)];
+
+            return update.slice(0, 3);
+          });
         } else {
           console.log("User Data err");
         }
       } catch (error) {
-        console.log("catch err", error);
+        console.log("catch err");
       }
     };
 
     getUser();
-  }, [userId]);
+  }, [userId, accessT]);
 
   const sendingMessage = async () => {
     const date = new Date();
@@ -77,7 +89,7 @@ function Messages() {
       try {
         const bodyMessage = await postingMessages(messageObject);
       } catch (error) {
-        console.log("err sending message", error);
+        console.log("err sending message");
       }
     }
   };
@@ -98,22 +110,17 @@ function Messages() {
   useEffect(() => {
     const chekingMessages = async () => {
       try {
-        const response = await api.get("messages/checkMessages", {
-          headers: { Authorization: `Bearer ${accessT}` },
-          withCredentials: true,
-        });
+        const response = await api.get("messages/checkMessages");
         if (response.data.hasMessages) {
-          const messages = await api.get("messages", {
-            headers: { Authorization: `Bearer ${accessT}` },
-            withCredentials: true,
-          });
+          const messages = await api.get("messages");
           const fetchedData = messages.data;
           setMessages(fetchedData);
         }
       } catch (error) {
-        console.log("cheking user err", error);
+        console.log("cheking user err");
       }
     };
+
     chekingMessages();
   }, []);
 
@@ -126,32 +133,36 @@ function Messages() {
       <Grid item xs={10}>
         <Grid container spacing={2}>
           <Grid item xs={5}>
-            <Card sx={{ backgroundColor: "lightblue" }}>
-              <CardHeader title="Personal Users" />
-              <CardContent>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                  <Avatar sx={{ bgcolor: "orange", width: 56, height: 56 }}>
-                    {currentUsername.charAt(0)}
-                  </Avatar>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: "text.secondary",
-                      borderRadius: 5,
-                      backgroundColor: "white",
-                      p: 2,
-                      flex: 1,
-                      cursor: "pointer",
-                    }}
-                  >
-                    <Typography variant="h6" sx={{ fontWeight: "bolder" }}>
-                      {currentUsername}
-                    </Typography>
-                    Be the First To Send Message!!
-                  </Typography>
-                </Box>
-              </CardContent>
-            </Card>
+            <Stack spacing={2}>
+              {recentUsers.map((user, i) => (
+                <Card key={i} sx={{ backgroundColor: "lightblue" }}>
+                  <CardHeader title={`Chat with ${user}`} />
+                  <CardContent>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+                      <Avatar sx={{ bgcolor: "orange", width: 56, height: 56 }}>
+                        {user}
+                      </Avatar>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: "text.secondary",
+                          borderRadius: 5,
+                          backgroundColor: "white",
+                          p: 2,
+                          flex: 1,
+                          cursor: "pointer",
+                        }}
+                      >
+                        <Typography variant="h6" sx={{ fontWeight: "bolder" }}>
+                          {user}
+                        </Typography>
+                        Be the First To Send Message!!
+                      </Typography>
+                    </Box>
+                  </CardContent>
+                </Card>
+              ))}
+            </Stack>
           </Grid>
 
           {/* Chat Box */}

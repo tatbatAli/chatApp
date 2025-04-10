@@ -17,13 +17,7 @@ function ForgetPwd() {
 
     try {
       const url = `auth/forgetPwd`;
-      const forgetRoute = await api.post(
-        url,
-        { email },
-        {
-          withCredentials: true,
-        }
-      );
+      const forgetRoute = await api.post(url, { email });
       console.log(forgetRoute.data.success, forgetRoute.data.msg);
       setMessage(forgetRoute.data.msg);
     } catch (error) {

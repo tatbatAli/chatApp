@@ -2,11 +2,7 @@ import api from "../src/api/api";
 
 const useLogout = async () => {
   try {
-    const response = await api.post(
-      "auth/logout",
-      {},
-      { withCredentials: true }
-    );
+    const response = await api.post("auth/logout");
 
     return response.data;
   } catch (error) {

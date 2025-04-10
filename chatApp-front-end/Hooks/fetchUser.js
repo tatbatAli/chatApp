@@ -2,6 +2,7 @@ import { useSelector } from "react-redux";
 import api from "../src/api/api";
 const useFetchUser = () => {
   const accessT = useSelector((state) => state.userSlice.token);
+  const id = useSelector((state) => state.userSlice.userId);
 
   const getUser = async () => {
     if (!accessT) {
@@ -10,10 +11,7 @@ const useFetchUser = () => {
     }
 
     try {
-      const userResponse = await api.get("users", {
-        headers: { Authorization: `Bearer ${accessT}` },
-        withCredentials: true,
-      });
+      const userResponse = await api.get(`users/${id}`);
       return userResponse.data;
     } catch (error) {
       console.log("Error fetching users", error);

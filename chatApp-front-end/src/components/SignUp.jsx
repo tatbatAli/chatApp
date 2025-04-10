@@ -5,7 +5,7 @@ import { Link } from "@mui/material";
 import postingUserSignUpData from "../../Hooks/postingUserSignUpData";
 import usePwdValidation from "../../Hooks/usePwdValidation";
 import { useDispatch } from "react-redux";
-import { setUser } from "../../redux/userSlice";
+import { setUser, setUserId } from "../../redux/userSlice";
 
 function SignUpPage() {
   const [userData, setUserData] = useState([]);
@@ -52,8 +52,8 @@ function SignUpPage() {
 
     try {
       const bodyData = await postingUserSignUpData(dataObject);
-      const user = bodyData.User_Data.username;
-      dispatch(setUser(user));
+      const user = bodyData.User_Data;
+      dispatch(setUser(user.username));
       console.log("signup was ", bodyData.success);
       setVerificationMsg(bodyData.message);
     } catch (error) {

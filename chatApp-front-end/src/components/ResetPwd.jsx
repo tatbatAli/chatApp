@@ -36,9 +36,7 @@ function ResetPwd() {
     setPasswordConfirmation("");
 
     try {
-      const respone = await api.post(`auth/${id}/resetPwd`, resetPwdObject, {
-        withCredentials: true,
-      });
+      const respone = await api.post(`auth/${id}/resetPwd`, resetPwdObject);
       console.log(respone.data.success, respone.data.msg);
       setMessage(respone.data.msg);
     } catch (error) {

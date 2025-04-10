@@ -6,21 +6,24 @@ import SendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import verificationEmail from "../utils/verificationEmail.js";
 import forgetPwd from "../utils/forgetPwd.js";
+import path from "path";
 
 const router = express.Router();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
 const REFRESH_TOKEN_SECRET = process.env.REFRESH_TOKEN_SECRET;
-const maxAge = 30 * 24 * 60 * 60 * 1000;
+const maxAge = 7 * 24 * 60 * 60 * 1000;
 const cookie = {
   httpOnly: true,
   secure: true,
   sameSite: "None",
   maxAge: maxAge,
+  path: "/",
 };
 const clearCookie = {
   httpOnly: true,
   secure: true,
   sameSite: "None",
+  path: "/",
 };
 let verificationToken = crypto.randomBytes(32).toString("hex");
 
@@ -68,9 +71,9 @@ router.post("/signIn", async (req, res) => {
 router.get("/:id/verify/:token", async (req, res, next) => {
   const id = req.params.id;
   const token = req.params.token;
-  const user = await User.findOne({ _id: id, verificationToken: token });
+  const user = await User.findById(id);
   try {
-    if (!user) {
+    if (!user || user.verificationToken !== token) {
       return res.status(400).json({ success: false, msg: "Invalid Link" });
     }
 
@@ -135,10 +138,12 @@ router.post("/login", async (req, res, next) => {
       { $set: { verificationToken: emailToken } }
     );
 
-    await verificationEmail(foundUser);
+    const user = await User.findById(foundUser._id);
+
+    await verificationEmail(user);
 
     return res.status(200).json({
-      success: true,
+      success: false,
       msg: "Email Sent To Your Account. Please Verify it",
     });
   }
@@ -167,6 +172,7 @@ router.post("/login", async (req, res, next) => {
 
   res.status(200).json({
     success: true,
+    userId: foundUser._id,
     msg: "login successfully",
     accessToken: accessToken,
   });
@@ -199,11 +205,7 @@ router.post("/refreshToken", async (req, res) => {
         { $set: { refreshToken: [...newRefreshTokenArray] } }
       );
 
-      res.clearCookie("authToken", {
-        httpOnly: true,
-        secure: true,
-        sameSite: "None",
-      });
+      res.clearCookie("authToken", clearCookie);
 
       return res
         .status(403)
@@ -213,14 +215,6 @@ router.post("/refreshToken", async (req, res) => {
     const payload = { username: foundUser.username, email: foundUser.email };
 
     const accessToken = accessTokenGeneratore(payload);
-    const newRefreshToken = refreshTokenGeneratore(payload);
-
-    const result = await User.updateOne(
-      { username: foundUser.username },
-      { $set: { refreshToken: [...newRefreshTokenArray, newRefreshToken] } }
-    );
-
-    res.cookie("authToken", newRefreshToken, cookie);
 
     res.status(200).json({ success: true, accessToken: accessToken });
   });
@@ -302,12 +296,12 @@ router.post("/logout", async (req, res) => {
 });
 
 function accessTokenGeneratore(payload) {
-  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: "20s" });
+  return jwt.sign(payload, ACCESS_TOKEN_SECRET, { expiresIn: "30min" });
 }
 
 function refreshTokenGeneratore(payload) {
   return jwt.sign(payload, REFRESH_TOKEN_SECRET, {
-    expiresIn: "30d",
+    expiresIn: "7d",
   });
 }
 

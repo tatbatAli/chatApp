@@ -32,20 +32,16 @@ function HomePage() {
   };
 
   const handleBtnSendMessage = (id) => {
-    navigate(`/MessagePage/${id}`);
+    navigate(`/MessagePage/userName/${id}`);
   };
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const data = await fetchUser();
+        const username = await fetchUser();
 
-        const filteredData = data.filter(
-          (user) => user.username !== currentUser
-        );
-
-        if (data) {
-          setUsers(filteredData);
+        if (username) {
+          setUsers(username);
         } else {
           console.log("data is null or undefined", filteredData);
         }

@@ -43,11 +43,7 @@ function Authentication({ children }) {
       async (error) => {
         if (error.response && error.response.status === 401) {
           try {
-            const newTokenResponse = await api.post(
-              "auth/refreshToken",
-              {},
-              { withCredentials: true }
-            );
+            const newTokenResponse = await api.post("auth/refreshToken");
 
             dispatch(loginSuccess(newTokenResponse.data.accessToken));
 
@@ -69,7 +65,7 @@ function Authentication({ children }) {
       api.interceptors.request.eject(requestInterceptor);
       api.interceptors.response.eject(responseInterceptor);
     };
-  }, [accessT, isAuthenticated]);
+  }, [accessT]);
 
   return children;
 }

@@ -4,7 +4,7 @@ import { Box, Grid, TextField, Button, Link } from "@mui/material";
 import postingUserLoginData from "../../Hooks/postingUserLoginData";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginSuccess } from "../../redux/userSlice";
+import { loginSuccess, setUserId } from "../../redux/userSlice";
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -45,9 +45,12 @@ function LoginPage() {
         if (loginData.success) {
           dispatch(loginSuccess(loginData.accessToken));
           setSuccessMsg(loginData.msg);
+          console.log(loginData.userId);
+          dispatch(setUserId(loginData.userId));
           navigate("/HomePage");
         } else {
-          console.log(loginData);
+          setSuccessMsg(loginData.msg);
+          console.log(loginData.msg);
         }
       } catch (error) {
         console.log("err sending data", error);

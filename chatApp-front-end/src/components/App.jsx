@@ -14,7 +14,8 @@ function App() {
     <Routes>
       <Route path="/HomePage" element={<HomePage />} />
       <Route path="/" element={<SignUpPage />} />
-      <Route path="/MessagePage/:userId?" element={<Messages />} />
+      <Route path="/MessagePage/userName?/:userId?" element={<Messages />} />
+      <Route path="/MessagePage" element={<Messages />} />
       <Route path="/LoginPage" element={<LoginPage />} />
       <Route path="/SignUp" element={<SignUpPage />} />
       <Route path="/auth/:id/verify/:token" element={<EmailVerify />} />

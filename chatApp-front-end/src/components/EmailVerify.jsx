@@ -20,11 +20,8 @@ function EmailVerify() {
         setValidUrl(verifyRoute.data.success);
         console.log(verifyRoute.data.msg);
       } catch (error) {
-        setValidUrl(error.verifyRoute.data.success);
-        console.log(
-          "Email verification failed:",
-          error.verifyRoute?.data?.msg || error.message
-        );
+        setValidUrl(error || "Email verification failed:");
+        console.log("Email verification failed:", error);
       }
     };
 
