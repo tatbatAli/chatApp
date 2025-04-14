@@ -14,7 +14,7 @@ function App() {
     <Routes>
       <Route path="/HomePage" element={<HomePage />} />
       <Route path="/" element={<SignUpPage />} />
-      <Route path="/MessagePage/userName?/:userId?" element={<Messages />} />
+      <Route path="/MessagePage/:sender?/:recepient?" element={<Messages />} />
       <Route path="/MessagePage" element={<Messages />} />
       <Route path="/LoginPage" element={<LoginPage />} />
       <Route path="/SignUp" element={<SignUpPage />} />

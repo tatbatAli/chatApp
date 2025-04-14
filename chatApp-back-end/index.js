@@ -16,6 +16,7 @@ const allowedOrigins = ["http://localhost:5173"];
 
 const app = express();
 const server = http.createServer(app);
+const userSocketId = {};
 
 app.use(express.json());
 app.use(cookieParser());
@@ -39,8 +40,34 @@ const io = new Server(server, {
 });
 
 io.on("connection", (socket) => {
-  socket.on("send message", (message) => {
-    socket.broadcast.emit("recieved message", message);
+  socket.on("register", (username) => {
+    if (!userSocketId[username]) {
+      userSocketId[username] = socket.id;
+    } else {
+      console.log(
+        `user ${username} is already registered with socket id ${userSocketId[username]}`
+      );
+    }
+  });
+
+  socket.on("send message", ({ from, to, message }) => {
+    if (userSocketId[to]) {
+      socket.to(userSocketId[to]).emit("recieved message", message);
+    } else {
+      console.log(`user ${to} not found`);
+    }
+  });
+
+  socket.on("disconnect", () => {
+    for (let [username, socketId] of Object.entries(userSocketId)) {
+      {
+        if (socketId === socket.id) {
+          delete userSocketId[username];
+          console.log(`${username} disconnet`);
+          break;
+        }
+      }
+    }
   });
 });
 

@@ -27,32 +27,37 @@ function Messages() {
   const [messages, setMessages] = useState([]);
   const [recentUsers, setRecentUsers] = useState([]);
   const [textMessage, setTextMessage] = useState("");
-  const [currentUsername, setCurrentUsername] = useState("");
+  const [recepientUsername, setRecipientUsername] = useState("");
   const ListMessage = useRef(null);
-  const { userId } = useParams();
+  const { recepient } = useParams();
   const accessT = useSelector((state) => state.userSlice.token);
+  const currentUser = useSelector((state) => state.userSlice.username);
+  const currentUserId = useSelector((state) => state.userSlice.userId);
 
   useEffect(() => {
     socket.on("connect", () => {
-      socket.on("recieved message", (messages) => {
-        setMessages(messages);
-      });
+      socket.emit("register", currentUser);
+    });
+    socket.on("recieved message", (message) => {
+      setMessages((prev) => [...prev, message]);
     });
 
     return () => {
-      // Cleanup socket events on unmount
+      socket.off("connect");
       socket.off("recieved message");
     };
-  }, []);
+  }, [currentUser]);
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const UserData = await api.get(`users/userName/${userId}`);
+        const UserData = await api.get(
+          `messages/${currentUserId}/${recepient}`
+        );
 
         if (UserData.data) {
-          const username = UserData.data.name;
-          setCurrentUsername(username);
+          const username = UserData.data.recepientUsername;
+          setRecipientUsername(username);
           setRecentUsers((prev) => {
             const update = [username, ...prev.filter((u) => u !== username)];
 
@@ -67,7 +72,7 @@ function Messages() {
     };
 
     getUser();
-  }, [userId, accessT]);
+  }, [recepient, accessT]);
 
   const sendingMessage = async () => {
     const date = new Date();
@@ -75,15 +80,21 @@ function Messages() {
       alert("field is empty");
     } else {
       const messageObject = {
-        user: currentUsername,
+        senderId: currentUserId,
+        sender: currentUser,
+        recepientId: recepient,
+        recepient: recepientUsername,
         message: textMessage,
         timeOfMessage: date.toLocaleTimeString(),
         dayOfMessage: date.toLocaleDateString(),
       };
 
-      const conversation = [...messages, messageObject];
-      setMessages(conversation);
-      socket.emit("send message", conversation);
+      setMessages((prevMsg) => [...prevMsg, messageObject]);
+      socket.emit("send message", {
+        from: currentUser,
+        to: recepientUsername,
+        message: messageObject,
+      });
       setTextMessage("");
 
       try {
@@ -112,8 +123,10 @@ function Messages() {
       try {
         const response = await api.get("messages/checkMessages");
         if (response.data.hasMessages) {
-          const messages = await api.get("messages");
-          const fetchedData = messages.data;
+          const messages = await api.get(
+            `messages/${currentUserId}/${recepient}`
+          );
+          const fetchedData = messages.data.message;
           setMessages(fetchedData);
         }
       } catch (error) {
@@ -186,10 +199,10 @@ function Messages() {
                 <Chip
                   avatar={
                     <Avatar sx={{ bgcolor: "orange" }}>
-                      {currentUsername.charAt(0)}
+                      {recepientUsername.charAt(0)}
                     </Avatar>
                   }
-                  label={currentUsername}
+                  label={recepientUsername}
                 />
 
                 {messages.length > 0 && (
@@ -239,7 +252,7 @@ function Messages() {
                           sx={{
                             display: "flex",
                             justifyContent:
-                              item.user === currentUsername
+                              item.sender === currentUser
                                 ? "flex-end"
                                 : "flex-start",
                             mb: 1,

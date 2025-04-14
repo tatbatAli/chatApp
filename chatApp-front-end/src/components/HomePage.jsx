@@ -17,6 +17,7 @@ function HomePage() {
   const [generatedRoomId, setGeneratedRoomId] = useState(null);
   const [users, setUsers] = useState([]);
   const currentUser = useSelector((state) => state.userSlice.username);
+  const currentUserId = useSelector((state) => state.userSlice.userId);
   const isAuthenticated = useSelector(
     (state) => state.userSlice.isAuthenticated
   );
@@ -32,7 +33,7 @@ function HomePage() {
   };
 
   const handleBtnSendMessage = (id) => {
-    navigate(`/MessagePage/userName/${id}`);
+    navigate(`/MessagePage/${currentUserId}/${id}`);
   };
 
   useEffect(() => {

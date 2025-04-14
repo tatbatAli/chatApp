@@ -4,7 +4,7 @@ import { Box, Grid, TextField, Button, Link } from "@mui/material";
 import postingUserLoginData from "../../Hooks/postingUserLoginData";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { loginSuccess, setUserId } from "../../redux/userSlice";
+import { loginSuccess, setUser, setUserId } from "../../redux/userSlice";
 function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -47,9 +47,10 @@ function LoginPage() {
           setSuccessMsg(loginData.msg);
           console.log(loginData.userId);
           dispatch(setUserId(loginData.userId));
+          dispatch(setUser(loginData.username));
           navigate("/HomePage");
         } else {
-          setSuccessMsg(loginData.msg);
+          setFaildedMsg(loginData.msg);
           console.log(loginData.msg);
         }
       } catch (error) {
@@ -135,6 +136,40 @@ function LoginPage() {
                   Submit
                 </Button>
               </Grid>
+              {successMsg && (
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      textAlign: "center",
+                      backgroundColor: "green",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="white">
+                      {successMsg}
+                    </Typography>
+                  </Box>
+                </Grid>
+              )}
+              {faildedMsg && (
+                <Grid item xs={12}>
+                  <Box
+                    sx={{
+                      mt: 2,
+                      p: 2,
+                      textAlign: "center",
+                      backgroundColor: "red",
+                      borderRadius: 1,
+                    }}
+                  >
+                    <Typography variant="body1" color="white">
+                      {faildedMsg}
+                    </Typography>
+                  </Box>
+                </Grid>
+              )}
             </Grid>
           </Box>
         </Grid>

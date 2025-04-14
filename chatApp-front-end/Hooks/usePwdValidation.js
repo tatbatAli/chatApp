@@ -18,13 +18,13 @@ const usePwdValidation = () => {
   const validateForm = () => {
     if ([password, passwordConfirmation].some((field) => !field?.trim())) {
       setErr("fill the fields");
-      return false;
+      return err;
     } else if (
       password !== passwordConfirmation ||
       !passwordPattern.test(password)
     ) {
       setErr("invalid password");
-      return false;
+      return err;
     }
     setErr("");
     return true;

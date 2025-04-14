@@ -35,7 +35,8 @@ function SignUpPage() {
   const submit = async (e) => {
     e.preventDefault();
     if (!validateForm()) {
-      return;
+      console.log(validateForm());
+      return err;
     }
 
     const dataObject = {
@@ -55,10 +56,9 @@ function SignUpPage() {
       const user = bodyData.User_Data;
       dispatch(setUser(user.username));
       console.log("signup was ", bodyData.success);
-      setVerificationMsg(bodyData.message);
+      setVerificationMsg(bodyData.msg);
     } catch (error) {
-      setErrMsg(error.bodyData.message || "Something went wrong");
-      console.log(error.bodyData.message || "Something went wrong");
+      setErrMsg(bodyData.msg || "Something went wrong");
     }
   };
 
@@ -78,6 +78,7 @@ function SignUpPage() {
         <Grid item xs={12} sx={{ display: "flex", justifyContent: "center" }}>
           <Box
             component="form"
+            onSubmit={submit}
             sx={{
               "& .MuiTextField-root": { m: 2, width: "40ch" },
               p: 4,
@@ -169,7 +170,8 @@ function SignUpPage() {
                   variant="contained"
                   color="primary"
                   fullWidth
-                  onClick={submit}
+                  type="submit"
+                  onSubmit={submit}
                 >
                   Submit
                 </Button>

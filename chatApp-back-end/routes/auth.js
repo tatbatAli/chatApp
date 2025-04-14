@@ -57,12 +57,12 @@ router.post("/signIn", async (req, res) => {
     res.status(201).json({
       success: true,
       User_Data: newUser,
-      message: "Email Sent To Your Account. Please Verify it",
+      msg: "Email Sent To Your Account. Please Verify it",
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: "Error occurred during sign in",
+      msg: "Error occurred during sign in",
       error: error,
     });
   }
@@ -116,17 +116,21 @@ router.post("/login", async (req, res, next) => {
   const { authToken } = req.cookies;
   const { username, password, email } = req.body;
   if (!username || !password || !email) {
-    return res.status(400).json({ msg: "Missing required fields" });
+    return res
+      .status(400)
+      .json({ success: false, msg: "Missing required fields" });
   }
 
   const foundUser = await User.findOne({ username });
   if (!foundUser) {
-    return res.status(401).json({ msg: "user not found" });
+    return res.status(401).json({ success: false, msg: "user not found" });
   }
 
   const matchPwd = await bcrypt.compare(password, foundUser.password);
   if (!matchPwd) {
-    return res.status(401).json({ msg: "Invalid password" });
+    return res
+      .status(403)
+      .json({ success: false, msg: "password in incorrect" });
   }
   if (!foundUser.verified) {
     const emailToken = jwt.sign({ email: foundUser.email }, verificationToken, {
@@ -173,6 +177,7 @@ router.post("/login", async (req, res, next) => {
   res.status(200).json({
     success: true,
     userId: foundUser._id,
+    username: foundUser.username,
     msg: "login successfully",
     accessToken: accessToken,
   });
