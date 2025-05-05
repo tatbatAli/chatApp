@@ -1,13 +1,19 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Box, Typography, Button } from "@mui/material";
 import useLogout from "../../Hooks/useLogout";
+import socket from "../../Hooks/socket";
+import { useSelector } from "react-redux";
 
 export default function Logout() {
   const navigate = useNavigate();
+  const currentUser = useSelector((state) => state.userSlice.username);
 
   const handleLogout = async () => {
     console.log("Logging out...");
+
+    socket.emit("logout", currentUser);
+    socket.disconnect();
 
     try {
       const logingOut = await useLogout();

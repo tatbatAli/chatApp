@@ -1,167 +1,27 @@
-import * as React from "react";
-import Box from "@mui/material/Box";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import Stack from "@mui/material/Stack";
-import Avatar from "@mui/material/Avatar";
-import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import Input from "@mui/material/Input";
-import { useState, useRef, useEffect } from "react";
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
+  Divider,
+  TextField,
+  IconButton,
+  Avatar,
+  Paper,
+  Button,
+} from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import Button from "@mui/material/Button";
-import SideBar from "./SideBar";
-import Grid from "@mui/material/Grid";
-import postingMessages from "../../Hooks/postingMessages";
-import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
-import CardContent from "@mui/material/CardContent";
-import { useParams } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import api from "../api/api";
+import { useState, useEffect } from "react";
 import socket from "../../Hooks/socket";
-import { markAllAsRead } from "../../redux/userSlice";
+import { useSelector } from "react-redux";
 
-function Messages() {
-  const [messages, setMessages] = useState([]);
-  const [recentUsers, setRecentUsers] = useState([]);
-  const [textMessage, setTextMessage] = useState("");
-  const [recepientUsername, setRecipientUsername] = useState("");
-  const [isOnline, setIsOnline] = useState(false);
-  const ListMessage = useRef(null);
-  const { recepient } = useParams();
-  const accessT = useSelector((state) => state.userSlice.token);
-  const currentUser = useSelector((state) => state.userSlice.username);
-  const currentUserId = useSelector((state) => state.userSlice.userId);
-  const lastUsers = useSelector((state) => state.userSlice.recentUsers);
-  const onlineUsers = useSelector((state) => state.userSlice.onlineUsers);
-  const dispatch = useDispatch();
-
+const RoomPage = () => {
+  const [message, setMessage] = useState("");
+  const roomId = useSelector((state) => state.userSlice.roomId);
   useEffect(() => {
-    dispatch(markAllAsRead());
-  }, [dispatch]);
-
-  useEffect(() => {
-    setIsOnline(() => {
-      console.log(onlineUsers);
-      const online = onlineUsers.includes(recepientUsername);
-
-      return online;
-    });
-  }, [onlineUsers, recepientUsername]);
-
-  useEffect(() => {
-    socket.on("recieved message", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    return () => {
-      socket.off("recieved message");
-    };
-  }, [currentUser]);
-
-  useEffect(() => {
-    const getUser = async () => {
-      if (!recepient) {
-        return "false";
-      }
-
-      try {
-        const UserData = await api.get(
-          `messages/${currentUserId}/${recepient}`
-        );
-
-        if (UserData.data) {
-          const data = [
-            {
-              username: UserData.data.recepientUsername,
-              recepientId: UserData.data.recepientId,
-            },
-          ];
-
-          setRecipientUsername(data[0].username);
-          setRecentUsers(lastUsers);
-        } else {
-          console.log("user not found");
-        }
-      } catch (error) {
-        console.log("catch err");
-      }
-    };
-
-    getUser();
-  }, [recepient, accessT]);
-
-  const sendingMessage = async () => {
-    const date = new Date();
-    const hours = ("0" + date.getHours()).slice(-2);
-    const mins = ("0" + date.getMinutes()).slice(-2);
-    if (!textMessage || textMessage.trim() === "") {
-      alert("field is empty");
-    } else {
-      const messageObject = {
-        senderId: currentUserId,
-        sender: currentUser,
-        recepientId: recepient,
-        recepient: recepientUsername,
-        message: textMessage,
-        timeOfMessage: `${hours}:${mins}`,
-        dayOfMessage: date.toLocaleDateString(),
-      };
-
-      setMessages((prevMsg) => [...prevMsg, messageObject]);
-      socket.emit("send message", {
-        message: messageObject,
-      });
-      socket.emit("sendNotification", {
-        notificationMsg: messageObject,
-      });
-      setTextMessage("");
-
-      try {
-        const bodyMessage = await postingMessages(messageObject);
-      } catch (error) {
-        console.log("err sending message");
-      }
-    }
-  };
-
-  const handlEnter = async (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendingMessage();
-    }
-  };
-
-  useEffect(() => {
-    if (ListMessage.current) {
-      ListMessage.current.scrollTop = ListMessage.current.scrollHeight;
-    }
-  }, [messages]);
-
-  useEffect(() => {
-    const chekingMessages = async () => {
-      if (!recepient) {
-        return false;
-      }
-
-      try {
-        const response = await api.get("messages/checkMessages");
-        if (response.data.hasMessages) {
-          const messages = await api.get(
-            `messages/${currentUserId}/${recepient}`
-          );
-          const fetchedData = messages.data.message;
-          setMessages(fetchedData);
-        }
-      } catch (error) {
-        console.log("cheking user err");
-      }
-    };
-
-    chekingMessages();
-  }, [recepient, currentUserId]);
+    socket.on("join-room", ({ roomId, roomName }) => {});
+  });
 
   return (
     <Grid container spacing={2} sx={{ height: "100vh" }}>
@@ -304,19 +164,19 @@ function Messages() {
                     {messages.map((item, index) => (
                       <Box key={index}>
                         {/* <Grid container spacing={1}>
-                          <Grid>
-                            <Box
-                              sx={{
-                                backgroundColor: "#f0f0f0",
-                                borderRadius: 2,
-                                p: 1,
-                                m: 1,
-                              }}
-                            >
-                              {item.dayOfMessage}
-                            </Box>
-                          </Grid>
-                        </Grid> */}
+                            <Grid>
+                              <Box
+                                sx={{
+                                  backgroundColor: "#f0f0f0",
+                                  borderRadius: 2,
+                                  p: 1,
+                                  m: 1,
+                                }}
+                              >
+                                {item.dayOfMessage}
+                              </Box>
+                            </Grid>
+                          </Grid> */}
                         <ListItem
                           sx={{
                             display: "flex",
@@ -410,6 +270,6 @@ function Messages() {
       </Grid>
     </Grid>
   );
-}
+};
 
-export default Messages;
+export default RoomPage;

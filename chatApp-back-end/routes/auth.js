@@ -100,6 +100,7 @@ router.get("/:id/notMe", async (req, res, next) => {
   const id = req.params.id;
   try {
     const user = await User.findOne({ _id: id });
+    console.log(user);
     if (!user) {
       return res.status(404).json({ msg: "User Not Found" });
     }

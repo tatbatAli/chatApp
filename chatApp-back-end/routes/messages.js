@@ -59,9 +59,11 @@ router.get("/:sender/:recepient", async (req, res) => {
       ],
     }).sort({ createdAt: 1 });
 
-    res
-      .status(200)
-      .json({ recepientUsername: recepientUser.username, message: message });
+    res.status(200).json({
+      recepientUsername: recepientUser.username,
+      recepientId: recepientUser._id,
+      message: message,
+    });
   } catch (error) {
     res.status(400).json({ "finding a message": error });
   }
