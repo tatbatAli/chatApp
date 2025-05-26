@@ -4,8 +4,10 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   username: null,
   userId: null,
+  email: null,
   token: null,
   isAuthenticated: null,
+  recentUserId: null,
   notifCount: 0,
   notifList: [],
   onlineUsers: [],
@@ -25,11 +27,17 @@ const user = createSlice({
     setUserId: (state, action) => {
       state.userId = action.payload;
     },
+    setUserEmail: (state, action) => {
+      state.email = action.payload;
+    },
     loginSuccess: (state, action) => {
       state.token = action.payload;
     },
     authentication: (state, action) => {
       state.isAuthenticated = action.payload;
+    },
+    setRecentUserId: (state, action) => {
+      state.recentUserId = action.payload;
     },
     setOnlineUser: (state, action) => {
       state.onlineUsers = action.payload;
@@ -68,8 +76,10 @@ const user = createSlice({
 export const {
   setUser,
   setUserId,
+  setUserEmail,
   loginSuccess,
   authentication,
+  setRecentUserId,
   setOnlineUser,
   addRecentUsers,
   setRoomId,

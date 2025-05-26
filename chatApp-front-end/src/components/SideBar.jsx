@@ -9,7 +9,6 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MailIcon from "@mui/icons-material/Mail";
 import Badge from "@mui/material/Badge";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Avatar from "@mui/material/Avatar";
@@ -45,7 +44,7 @@ function SideBar() {
     { text: "Home", path: "/HomePage" },
     { text: "Messages", path: "/MessagePage" },
     { text: "Room", path: "/Room" },
-    { text: "Settings", path: "/settings" },
+    { text: "Settings", path: "/Settings" },
   ];
 
   const drawer = (

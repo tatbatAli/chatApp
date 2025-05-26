@@ -4,7 +4,12 @@ import { Box, Grid, TextField, Button, Link } from "@mui/material";
 import postingUserLoginData from "../../Hooks/postingUserLoginData";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
-import { loginSuccess, setUser, setUserId } from "../../redux/userSlice";
+import {
+  loginSuccess,
+  setUser,
+  setUserEmail,
+  setUserId,
+} from "../../redux/userSlice";
 
 function LoginPage() {
   const [username, setUsername] = useState("");
@@ -38,6 +43,7 @@ function LoginPage() {
       if (loginData.success) {
         dispatch(loginSuccess(loginData.accessToken));
         dispatch(setUserId(loginData.userId));
+        dispatch(setUserEmail(loginData.email));
         dispatch(setUser(loginData.username));
         setSuccessMsg(loginData.msg);
         navigate("/HomePage");

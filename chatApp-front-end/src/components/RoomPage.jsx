@@ -12,16 +12,59 @@ import {
   Button,
 } from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import socket from "../../Hooks/socket";
 import { useSelector } from "react-redux";
 
 const RoomPage = () => {
-  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [textMsg, setTextMsg] = useState("");
   const roomId = useSelector((state) => state.userSlice.roomId);
+  const roomName = useSelector((state) => state.userSlice.roomName);
+  const roomList = useSelector((state) => state.userSlice.roomList);
+  const currentUser = useSelector((state) => state.userSlice.username);
+  const currentUserId = useSelector((state) => state.userSlice.userId);
+  const ListMessage = useRef(null);
+
   useEffect(() => {
     socket.on("join-room", ({ roomId, roomName }) => {});
   });
+
+  const sendingMessage = async () => {
+    const date = new Date();
+    const hours = ("0" + date.getHours()).slice(-2);
+    const mins = ("0" + date.getMinutes()).slice(-2);
+    if (!textMessage || textMessage.trim() === "") {
+      alert("field is empty");
+    } else {
+      const messageObject = {
+        type: "room",
+        roomId: roomId,
+        roomName: roomName,
+        roomList: roomList,
+        senderId: currentUserId,
+        sender: currentUser,
+        message: textMsg,
+        timeOfMessage: `${hours}:${mins}`,
+        dayOfMessage: date.toLocaleDateString(),
+      };
+
+      setMessages((prevMsg) => [...prevMsg, messageObject]);
+      socket.emit("send message", {
+        message: messageObject,
+      });
+      socket.emit("sendNotification", {
+        notificationMsg: messageObject,
+      });
+      setTextMsg("");
+
+      try {
+        const bodyMessage = await postingMessages(messageObject);
+      } catch (error) {
+        console.log("err sending message");
+      }
+    }
+  };
 
   return (
     <Grid container spacing={2} sx={{ height: "100vh" }}>
@@ -120,7 +163,6 @@ const RoomPage = () => {
                   label={
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       {recepientUsername}
-                      {isOnline ? " 🟢" : " 🔴 "}
                     </Typography>
                   }
                   sx={{
@@ -249,8 +291,8 @@ const RoomPage = () => {
                       fullWidth
                       placeholder="Type a message..."
                       onKeyDown={handlEnter}
-                      onChange={(e) => setTextMessage(e.target.value)}
-                      value={textMessage}
+                      onChange={(e) => setTextMsg(e.target.value)}
+                      value={textMsg}
                       sx={{ fontSize: "1rem" }}
                     />
                     <Button

@@ -6,7 +6,6 @@ import SendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import verificationEmail from "../utils/verificationEmail.js";
 import forgetPwd from "../utils/forgetPwd.js";
-import path from "path";
 
 const router = express.Router();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -113,6 +112,24 @@ router.get("/:id/notMe", async (req, res, next) => {
   }
 });
 
+router.get("/me", async (req, res, next) => {
+  const { authToken } = req.cookies;
+  if (!authToken)
+    return res.status(401).json({ msg: "token invalid, Unauthorized" });
+  try {
+    const decoded = jwt.verify(authToken, REFRESH_TOKEN_SECRET);
+
+    console.log("decode", decoded);
+    res.status(200).json({
+      username: decoded.username,
+      userId: decoded.userId,
+      token: authToken,
+    });
+  } catch (error) {
+    res.status(401).json({ msg: "Invalid token" });
+  }
+});
+
 router.post("/login", async (req, res, next) => {
   const { authToken } = req.cookies;
   const { username, password, email } = req.body;
@@ -153,7 +170,11 @@ router.post("/login", async (req, res, next) => {
     });
   }
 
-  const payload = { username: foundUser.username, email: foundUser.email };
+  const payload = {
+    username: foundUser.username,
+    email: foundUser.email,
+    userId: foundUser._id,
+  };
 
   const accessToken = accessTokenGeneratore(payload);
   const newRefreshToken = refreshTokenGeneratore(payload);
@@ -179,8 +200,9 @@ router.post("/login", async (req, res, next) => {
     success: true,
     userId: foundUser._id,
     username: foundUser.username,
-    msg: "login successfully",
+    email: foundUser.email,
     accessToken: accessToken,
+    msg: "login successfully",
   });
 });
 
@@ -218,7 +240,11 @@ router.post("/refreshToken", async (req, res) => {
         .json({ msg: "the refresh token is invalid or it expires" });
     }
 
-    const payload = { username: foundUser.username, email: foundUser.email };
+    const payload = {
+      username: foundUser.username,
+      email: foundUser.email,
+      userId: foundUser._id,
+    };
 
     const accessToken = accessTokenGeneratore(payload);
 

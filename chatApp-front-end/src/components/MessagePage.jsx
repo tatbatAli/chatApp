@@ -2,7 +2,6 @@ import * as React from "react";
 import Box from "@mui/material/Box";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import Stack from "@mui/material/Stack";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
@@ -17,11 +16,12 @@ import postingMessages from "../../Hooks/postingMessages";
 import Card from "@mui/material/Card";
 import CardHeader from "@mui/material/CardHeader";
 import CardContent from "@mui/material/CardContent";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
 import api from "../api/api";
 import socket from "../../Hooks/socket";
-import { markAllAsRead } from "../../redux/userSlice";
+import { markAllAsRead, setRecentUserId } from "../../redux/userSlice";
+import useAutoScroll from "../../Hooks/useAutoScroll";
 
 function Messages() {
   const [messages, setMessages] = useState([]);
@@ -36,7 +36,15 @@ function Messages() {
   const currentUserId = useSelector((state) => state.userSlice.userId);
   const lastUsers = useSelector((state) => state.userSlice.recentUsers);
   const onlineUsers = useSelector((state) => state.userSlice.onlineUsers);
+  const recentUserId = useSelector((state) => state.userSlice.recentUserId);
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!currentUserId || !recepient) {
+      navigate(`/MessagePage/${currentUserId}/${recentUserId}`);
+    }
+  }, [currentUserId, recepient]);
 
   useEffect(() => {
     dispatch(markAllAsRead());
@@ -66,6 +74,8 @@ function Messages() {
       if (!recepient) {
         return "false";
       }
+
+      dispatch(setRecentUserId(recepient));
 
       try {
         const UserData = await api.get(
@@ -134,11 +144,11 @@ function Messages() {
     }
   };
 
-  useEffect(() => {
-    if (ListMessage.current) {
-      ListMessage.current.scrollTop = ListMessage.current.scrollHeight;
-    }
-  }, [messages]);
+  const handlChatBox = (recnetUserId) => {
+    navigate(`/MessagePage/${currentUserId}/${recnetUserId._id}`);
+  };
+
+  useAutoScroll(ListMessage, messages);
 
   useEffect(() => {
     const chekingMessages = async () => {
@@ -171,16 +181,21 @@ function Messages() {
 
       <Grid item xs={10}>
         <Grid container spacing={2}>
+          {/*recent users */}
           <Grid item xs={5}>
             <Stack spacing={2}>
               {recentUsers.map((user, i) => (
                 <Card
                   key={i}
+                  onClick={() => {
+                    handlChatBox(user);
+                  }}
                   sx={{
                     backgroundColor: "#e3f2fd",
                     borderRadius: 3,
                     mb: 2,
                     boxShadow: 4,
+                    cursor: "pointer",
                     transition: "transform 0.2s",
                     "&:hover": { transform: "scale(1.02)" },
                   }}
@@ -215,7 +230,6 @@ function Messages() {
                           borderRadius: 2,
                           p: 2,
                           flex: 1,
-                          cursor: "pointer",
                           "&:hover": {
                             backgroundColor: "#f5f5f5",
                           },
@@ -234,6 +248,7 @@ function Messages() {
               ))}
             </Stack>
           </Grid>
+          {/* recent users*/}
 
           {/* Chat Box */}
           <Grid item xs={6}>
@@ -406,6 +421,7 @@ function Messages() {
               </Stack>
             </Box>
           </Grid>
+          {/* chat box*/}
         </Grid>
       </Grid>
     </Grid>
