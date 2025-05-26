@@ -1,23 +1,28 @@
 import React from "react";
 import Messages from "./MessagePage";
 import SignUpPage from "./SignUp";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { Route, Routes } from "react-router-dom";
 import HomePage from "./HomePage";
-import { Provider } from "react-redux";
-import store from "../../redux/store";
+import EmailVerify from "./EmailVerify";
+import ForgetPwd from "./ForgetPwd";
+import ResetPwd from "./ResetPwd";
 import LoginPage from "./LoginPage";
+import Logout from "./LogOut";
 
 function App() {
   return (
-    <Provider store={store}>
-      <Routes>
-        <Route path="/HomePage" element={<HomePage />} />
-        <Route path="/" element={<SignUpPage />} />
-        <Route path="/MessagePage/:userId?" element={<Messages />} />
-        <Route path="/LoginPage" element={<LoginPage />} />
-        <Route path="/SignUp" element={<SignUpPage />} />
-      </Routes>
-    </Provider>
+    <Routes>
+      <Route path="/HomePage" element={<HomePage />} />
+      <Route path="/" element={<SignUpPage />} />
+      <Route path="/MessagePage/userName?/:userId?" element={<Messages />} />
+      <Route path="/MessagePage" element={<Messages />} />
+      <Route path="/LoginPage" element={<LoginPage />} />
+      <Route path="/SignUp" element={<SignUpPage />} />
+      <Route path="/auth/:id/verify/:token" element={<EmailVerify />} />
+      <Route path="/ForgetPwd" element={<ForgetPwd />} />
+      <Route path="/auth/:id/resetPwd" element={<ResetPwd />} />
+      <Route path="/LogOut" element={<Logout />} />
+    </Routes>
   );
 }
 

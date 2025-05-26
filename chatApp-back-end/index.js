@@ -8,6 +8,7 @@ import { Server } from "socket.io";
 import messageRoutes from "./routes/messages.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
+import verifyJWT from "./middleware/verifyJWT.js";
 
 dotenv.config();
 const port = process.env.PORT;
@@ -43,9 +44,9 @@ io.on("connection", (socket) => {
   });
 });
 
-app.use("/messages", messageRoutes);
 app.use("/auth", authRoutes);
-app.use("/users", userRoutes);
+app.use("/messages", verifyJWT, messageRoutes);
+app.use("/users", verifyJWT, userRoutes);
 
 app.post("*", (req, res) => {
   res.status(500).json({ msg: "Server Error" });

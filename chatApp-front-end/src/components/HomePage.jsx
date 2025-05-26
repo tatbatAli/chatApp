@@ -7,16 +7,21 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import SideBar from "./SideBar";
 import { useNavigate } from "react-router-dom";
-import fetchUser from "../../Hooks/fetchUser";
 import { useSelector } from "react-redux";
+import useFetchUser from "../../Hooks/fetchUser";
+import { Link } from "@mui/material";
 
 function HomePage() {
   const [search, setSearch] = useState("");
   const [roomId, setRoomId] = useState("");
   const [generatedRoomId, setGeneratedRoomId] = useState(null);
   const [users, setUsers] = useState([]);
-  const navigate = useNavigate();
   const currentUser = useSelector((state) => state.userSlice.username);
+  const isAuthenticated = useSelector(
+    (state) => state.userSlice.isAuthenticated
+  );
+  const fetchUser = useFetchUser();
+  const navigate = useNavigate();
 
   const handleSearchChange = (e) => setSearch(e.target.value);
   const handleRoomIdChange = (e) => setRoomId(e.target.value);
@@ -27,19 +32,16 @@ function HomePage() {
   };
 
   const handleBtnSendMessage = (id) => {
-    navigate(`/MessagePage/${id}`);
+    navigate(`/MessagePage/userName/${id}`);
   };
 
   useEffect(() => {
     const getUser = async () => {
       try {
-        const data = await fetchUser();
-        const filteredData = data.filter(
-          (user) => user.username !== currentUser
-        );
+        const username = await fetchUser();
 
-        if (data) {
-          setUsers(filteredData);
+        if (username) {
+          setUsers(username);
         } else {
           console.log("data is null or undefined", filteredData);
         }
@@ -64,11 +66,34 @@ function HomePage() {
             p: 2,
             mb: 3,
             borderRadius: 1,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
           }}
         >
           <Typography variant="h5" fontWeight="bold">
             Welcome to Our Chat App
           </Typography>
+          {!isAuthenticated && (
+            <Box>
+              <Link
+                href="/SignUp"
+                color="primary"
+                underline="hover"
+                style={{ margin: 5 }}
+              >
+                SignUp
+              </Link>
+              <Link
+                href="/LoginPage"
+                color="primary"
+                underline="hover"
+                style={{ margin: 5 }}
+              >
+                Log-in
+              </Link>
+            </Box>
+          )}
         </Box>
 
         <Grid container spacing={2}>
