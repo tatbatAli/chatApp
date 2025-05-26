@@ -1,132 +1,131 @@
-import * as React from "react";
 import { useState, useEffect } from "react";
-import Box from "@mui/material/Box";
-import Grid from "@mui/material/Grid";
-import TextField from "@mui/material/TextField";
-import Button from "@mui/material/Button";
-import Typography from "@mui/material/Typography";
+import { Box, Grid, TextField, Button, Typography, Link } from "@mui/material";
 import SideBar from "./SideBar";
 import { useNavigate } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import useFetchUser from "../../Hooks/fetchUser";
-import { Link } from "@mui/material";
+import { addRecentUsers, setOnlineUser } from "../../redux/userSlice";
+import socket from "../../Hooks/socket";
 
 function HomePage() {
   const [search, setSearch] = useState("");
   const [roomId, setRoomId] = useState("");
   const [generatedRoomId, setGeneratedRoomId] = useState(null);
   const [users, setUsers] = useState([]);
-  const currentUser = useSelector((state) => state.userSlice.username);
+  const currentUserId = useSelector((state) => state.userSlice.userId);
+  const token = useSelector((state) => state.userSlice.token);
   const isAuthenticated = useSelector(
     (state) => state.userSlice.isAuthenticated
   );
+  const onlineUsers = useSelector((state) => state.userSlice.onlineUsers);
+  const username = useSelector((state) => state.userSlice.username);
   const fetchUser = useFetchUser();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const handleSearchChange = (e) => setSearch(e.target.value);
-  const handleRoomIdChange = (e) => setRoomId(e.target.value);
+  const handleRoomIdChange = (e) => {
+    setRoomId(e.target.value);
+    navigate("/RoomPage");
+  };
 
   const generateRoomId = () => {
     const newRoomId = Math.random().toString(36).substr(2, 8);
+    dispatch(setRoomId(newRoomId));
     setGeneratedRoomId(newRoomId);
   };
 
-  const handleBtnSendMessage = (id) => {
-    navigate(`/MessagePage/userName/${id}`);
+  const handleBtnSendMessage = (user) => {
+    dispatch(addRecentUsers(user));
+    navigate(`/MessagePage/${currentUserId}/${user._id}`);
   };
 
   useEffect(() => {
     const getUser = async () => {
+      if (!token || !currentUserId) return;
       try {
-        const username = await fetchUser();
-
-        if (username) {
-          setUsers(username);
-        } else {
-          console.log("data is null or undefined", filteredData);
-        }
+        const listOfUsers = await fetchUser();
+        if (listOfUsers) setUsers(listOfUsers);
       } catch (error) {
         console.log("err fetching user", error);
       }
     };
 
+    if (username) {
+      socket.emit("register", username);
+    }
+
     getUser();
-  }, []);
+  }, [token, currentUserId]);
 
   return (
-    <Box sx={{ display: "flex", height: "100vh" }}>
+    <Box sx={{ display: "flex", height: "100vh", backgroundColor: "#f7f9fc" }}>
       <SideBar />
 
-      <Box sx={{ flexGrow: 1, p: 3 }}>
+      <Box sx={{ flexGrow: 1, p: 4, overflowY: "auto" }}>
         <Box
           sx={{
-            backgroundColor: "lightblue",
+            backgroundColor: "#e3f2fd",
             color: "black",
-            textAlign: "center",
             p: 2,
-            mb: 3,
-            borderRadius: 1,
+            mb: 4,
+            borderRadius: 2,
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
           }}
         >
           <Typography variant="h5" fontWeight="bold">
-            Welcome to Our Chat App
+            👋 Welcome to Our Chat App
           </Typography>
           {!isAuthenticated && (
             <Box>
-              <Link
-                href="/SignUp"
-                color="primary"
-                underline="hover"
-                style={{ margin: 5 }}
-              >
-                SignUp
+              <Link href="/SignUp" underline="hover" sx={{ mx: 1 }}>
+                Sign Up
               </Link>
-              <Link
-                href="/LoginPage"
-                color="primary"
-                underline="hover"
-                style={{ margin: 5 }}
-              >
-                Log-in
+              <Link href="/LoginPage" underline="hover" sx={{ mx: 1 }}>
+                Log In
               </Link>
             </Box>
           )}
         </Box>
 
-        <Grid container spacing={2}>
-          <Grid item xs={8}>
+        <Grid container spacing={3}>
+          {/* Left Section */}
+          <Grid item xs={12} md={8}>
+            {/* Search Box */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 3 }}>
               <TextField
                 label="Search Users"
                 variant="outlined"
                 value={search}
                 onChange={handleSearchChange}
-                sx={{ width: "300px" }}
+                sx={{ width: "70%" }}
               />
-              <Button variant="contained" color="primary" sx={{ ml: 2 }}>
+              <Button
+                variant="contained"
+                color="primary"
+                sx={{ ml: 2, textTransform: "none" }}
+              >
                 Search
               </Button>
             </Box>
 
+            {/* Create Room Card */}
             <Box
               sx={{
                 p: 3,
                 backgroundColor: "#fff",
                 boxShadow: 3,
-                borderRadius: 2,
+                borderRadius: 3,
                 mb: 3,
-                textAlign: "left",
               }}
             >
-              <Typography variant="h6" fontWeight="medium" mb={2}>
+              <Typography variant="h6" fontWeight="bold" mb={1}>
                 Create a Room
               </Typography>
-              <Typography color="gray" mb={2}>
-                Create a room to chat with your best friends and enjoy your
-                time.
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Start a private conversation by creating a room.
               </Typography>
               <Button
                 variant="contained"
@@ -134,46 +133,41 @@ function HomePage() {
                 fullWidth
                 onClick={generateRoomId}
               >
-                Create Room
+                Generate Room ID
               </Button>
               {generatedRoomId && (
                 <Box
                   sx={{
                     mt: 2,
                     p: 2,
-                    backgroundColor: "#eee",
+                    backgroundColor: "#f1f1f1",
                     borderRadius: 1,
                     textAlign: "center",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
+                    fontWeight: "bold",
                   }}
                 >
-                  <Typography>
-                    Room ID: <strong>{generatedRoomId}</strong>
-                  </Typography>
+                  Room ID: {generatedRoomId}
                 </Box>
               )}
             </Box>
 
+            {/* Join Room Card */}
             <Box
               sx={{
                 p: 3,
                 backgroundColor: "#fff",
                 boxShadow: 3,
-                borderRadius: 2,
-                textAlign: "left",
-                mb: 3,
+                borderRadius: 3,
               }}
             >
-              <Typography variant="h6" fontWeight="medium" mb={2}>
+              <Typography variant="h6" fontWeight="bold" mb={1}>
                 Join a Room
               </Typography>
-              <Typography color="gray" mb={2}>
-                Enter a room ID to join an existing conversation.
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Enter a Room ID to connect with others.
               </Typography>
               <TextField
-                label="Enter Room ID"
+                label="Room ID"
                 variant="outlined"
                 fullWidth
                 value={roomId}
@@ -183,65 +177,74 @@ function HomePage() {
                 variant="contained"
                 color="success"
                 fullWidth
-                sx={{ mt: 1 }}
+                sx={{ mt: 2 }}
               >
                 Join Room
               </Button>
             </Box>
           </Grid>
 
-          <Grid item xs={4}>
+          {/* Right Section */}
+          <Grid item xs={12} md={4}>
             <Box
               sx={{
                 p: 3,
                 backgroundColor: "#fff",
                 boxShadow: 3,
-                borderRadius: 2,
-                textAlign: "left",
+                borderRadius: 3,
               }}
             >
-              <Typography variant="h6" fontWeight="medium" mb={2}>
+              <Typography variant="h6" fontWeight="bold" mb={1}>
                 Other Users
               </Typography>
-              <Typography color="gray" mb={2}>
-                Send a message to other users.
+              <Typography variant="body2" color="text.secondary" mb={2}>
+                Start chatting with someone new.
               </Typography>
+
               <Box
                 sx={{
-                  backgroundColor: "#eee",
-                  p: 2,
-                  borderRadius: 1,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 1,
+                  gap: 2,
+                  maxHeight: "60vh",
+                  overflowY: "auto",
                 }}
               >
-                {users.map((user) => (
-                  <Box
-                    key={user._id}
-                    sx={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      p: 1,
-                      backgroundColor: "#fff",
-                      borderRadius: 1,
-                      boxShadow: 1,
-                    }}
-                  >
-                    <Typography>{user.username}</Typography>
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      size="small"
-                      onClick={() => {
-                        handleBtnSendMessage(user._id);
+                {users.length > 0 ? (
+                  users.map((user) => (
+                    <Box
+                      key={user._id}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        backgroundColor: "#f9f9f9",
+                        p: 2,
+                        borderRadius: 2,
+                        "&:hover": {
+                          backgroundColor: "#e0f7fa",
+                        },
                       }}
                     >
-                      Send Message
-                    </Button>
-                  </Box>
-                ))}
+                      <Typography>
+                        {user.username}{" "}
+                        {onlineUsers.includes(user.username) ? " 🟢 " : " 🔴 "}
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        color="primary"
+                        size="small"
+                        onClick={() => handleBtnSendMessage(user)}
+                      >
+                        Message
+                      </Button>
+                    </Box>
+                  ))
+                ) : (
+                  <Typography color="text.secondary">
+                    No users available.
+                  </Typography>
+                )}
               </Box>
             </Box>
           </Grid>

@@ -17,8 +17,8 @@ const createEmailContent = (verifyEmailUrl, verifyUserUrl) => {
 };
 
 const verificationEmail = async (user) => {
-  const verifyEmailUrl = `${process.env.FRONT_URL}/auth/${user.id}/verify/${user.verificationToken}`;
-  const verifyUserUrl = `${process.env.FRONT_URL}/auth/${user.id}/notMe`;
+  const verifyEmailUrl = `${process.env.FRONT_URL}/auth/${user._id}/verify/${user.verificationToken}`;
+  const verifyUserUrl = `${process.env.BASE_URL}/auth/${user._id}/notMe`;
   const subject = "Verify Email";
   const htmlContent = createEmailContent(verifyEmailUrl, verifyUserUrl);
 

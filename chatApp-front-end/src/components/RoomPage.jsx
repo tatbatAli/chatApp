@@ -1,107 +1,34 @@
-import * as React from "react";
-import Box from "@mui/material/Box";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-import Stack from "@mui/material/Stack";
-import Avatar from "@mui/material/Avatar";
-import Typography from "@mui/material/Typography";
-import Chip from "@mui/material/Chip";
-import Input from "@mui/material/Input";
-import { useState, useRef, useEffect } from "react";
+import {
+  Box,
+  List,
+  ListItem,
+  ListItemText,
+  Typography,
+  Divider,
+  TextField,
+  IconButton,
+  Avatar,
+  Paper,
+  Button,
+} from "@mui/material";
 import SendIcon from "@mui/icons-material/Send";
-import Button from "@mui/material/Button";
-import SideBar from "./SideBar";
-import Grid from "@mui/material/Grid";
-import postingMessages from "../../Hooks/postingMessages";
-import Card from "@mui/material/Card";
-import CardHeader from "@mui/material/CardHeader";
-import CardContent from "@mui/material/CardContent";
-import { useParams, useNavigate } from "react-router-dom";
-import { useSelector, useDispatch } from "react-redux";
-import api from "../api/api";
+import { useState, useEffect, useRef } from "react";
 import socket from "../../Hooks/socket";
-import { markAllAsRead, setRecentUserId } from "../../redux/userSlice";
-import useAutoScroll from "../../Hooks/useAutoScroll";
+import { useSelector } from "react-redux";
 
-function Messages() {
+const RoomPage = () => {
   const [messages, setMessages] = useState([]);
-  const [recentUsers, setRecentUsers] = useState([]);
-  const [textMessage, setTextMessage] = useState("");
-  const [recepientUsername, setRecipientUsername] = useState("");
-  const [isOnline, setIsOnline] = useState(false);
-  const ListMessage = useRef(null);
-  const { recepient } = useParams();
-  const accessT = useSelector((state) => state.userSlice.token);
+  const [textMsg, setTextMsg] = useState("");
+  const roomId = useSelector((state) => state.userSlice.roomId);
+  const roomName = useSelector((state) => state.userSlice.roomName);
+  const roomList = useSelector((state) => state.userSlice.roomList);
   const currentUser = useSelector((state) => state.userSlice.username);
   const currentUserId = useSelector((state) => state.userSlice.userId);
-  const lastUsers = useSelector((state) => state.userSlice.recentUsers);
-  const onlineUsers = useSelector((state) => state.userSlice.onlineUsers);
-  const recentUserId = useSelector((state) => state.userSlice.recentUserId);
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+  const ListMessage = useRef(null);
 
   useEffect(() => {
-    if (!currentUserId || !recepient) {
-      navigate(`/MessagePage/${currentUserId}/${recentUserId}`);
-    }
-  }, [currentUserId, recepient]);
-
-  useEffect(() => {
-    dispatch(markAllAsRead());
-  }, [dispatch]);
-
-  useEffect(() => {
-    setIsOnline(() => {
-      console.log(onlineUsers);
-      const online = onlineUsers.includes(recepientUsername);
-
-      return online;
-    });
-  }, [onlineUsers, recepientUsername]);
-
-  useEffect(() => {
-    socket.on("recieved message", (message) => {
-      setMessages((prev) => [...prev, message]);
-    });
-
-    return () => {
-      socket.off("recieved message");
-    };
-  }, [currentUser]);
-
-  useEffect(() => {
-    const getUser = async () => {
-      if (!recepient) {
-        return "false";
-      }
-
-      dispatch(setRecentUserId(recepient));
-
-      try {
-        const UserData = await api.get(
-          `messages/${currentUserId}/${recepient}`
-        );
-
-        if (UserData.data) {
-          const data = [
-            {
-              username: UserData.data.recepientUsername,
-              recepientId: UserData.data.recepientId,
-            },
-          ];
-
-          setRecipientUsername(data[0].username);
-          setRecentUsers(lastUsers);
-        } else {
-          console.log("user not found");
-        }
-      } catch (error) {
-        console.log("catch err");
-      }
-    };
-
-    getUser();
-  }, [recepient, accessT]);
+    socket.on("join-room", ({ roomId, roomName }) => {});
+  });
 
   const sendingMessage = async () => {
     const date = new Date();
@@ -111,11 +38,13 @@ function Messages() {
       alert("field is empty");
     } else {
       const messageObject = {
+        type: "room",
+        roomId: roomId,
+        roomName: roomName,
+        roomList: roomList,
         senderId: currentUserId,
         sender: currentUser,
-        recepientId: recepient,
-        recepient: recepientUsername,
-        message: textMessage,
+        message: textMsg,
         timeOfMessage: `${hours}:${mins}`,
         dayOfMessage: date.toLocaleDateString(),
       };
@@ -127,7 +56,7 @@ function Messages() {
       socket.emit("sendNotification", {
         notificationMsg: messageObject,
       });
-      setTextMessage("");
+      setTextMsg("");
 
       try {
         const bodyMessage = await postingMessages(messageObject);
@@ -137,42 +66,6 @@ function Messages() {
     }
   };
 
-  const handlEnter = async (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      sendingMessage();
-    }
-  };
-
-  const handlChatBox = (recnetUserId) => {
-    navigate(`/MessagePage/${currentUserId}/${recnetUserId._id}`);
-  };
-
-  useAutoScroll(ListMessage, messages);
-
-  useEffect(() => {
-    const chekingMessages = async () => {
-      if (!recepient) {
-        return false;
-      }
-
-      try {
-        const response = await api.get("messages/checkMessages");
-        if (response.data.hasMessages) {
-          const messages = await api.get(
-            `messages/${currentUserId}/${recepient}`
-          );
-          const fetchedData = messages.data.message;
-          setMessages(fetchedData);
-        }
-      } catch (error) {
-        console.log("cheking user err");
-      }
-    };
-
-    chekingMessages();
-  }, [recepient, currentUserId]);
-
   return (
     <Grid container spacing={2} sx={{ height: "100vh" }}>
       <Grid item xs={2}>
@@ -181,21 +74,16 @@ function Messages() {
 
       <Grid item xs={10}>
         <Grid container spacing={2}>
-          {/*recent users */}
           <Grid item xs={5}>
             <Stack spacing={2}>
               {recentUsers.map((user, i) => (
                 <Card
                   key={i}
-                  onClick={() => {
-                    handlChatBox(user);
-                  }}
                   sx={{
                     backgroundColor: "#e3f2fd",
                     borderRadius: 3,
                     mb: 2,
                     boxShadow: 4,
-                    cursor: "pointer",
                     transition: "transform 0.2s",
                     "&:hover": { transform: "scale(1.02)" },
                   }}
@@ -230,6 +118,7 @@ function Messages() {
                           borderRadius: 2,
                           p: 2,
                           flex: 1,
+                          cursor: "pointer",
                           "&:hover": {
                             backgroundColor: "#f5f5f5",
                           },
@@ -248,7 +137,6 @@ function Messages() {
               ))}
             </Stack>
           </Grid>
-          {/* recent users*/}
 
           {/* Chat Box */}
           <Grid item xs={6}>
@@ -275,7 +163,6 @@ function Messages() {
                   label={
                     <Typography variant="subtitle1" sx={{ fontWeight: "bold" }}>
                       {recepientUsername}
-                      {isOnline ? " 🟢" : " 🔴 "}
                     </Typography>
                   }
                   sx={{
@@ -319,19 +206,19 @@ function Messages() {
                     {messages.map((item, index) => (
                       <Box key={index}>
                         {/* <Grid container spacing={1}>
-                          <Grid>
-                            <Box
-                              sx={{
-                                backgroundColor: "#f0f0f0",
-                                borderRadius: 2,
-                                p: 1,
-                                m: 1,
-                              }}
-                            >
-                              {item.dayOfMessage}
-                            </Box>
-                          </Grid>
-                        </Grid> */}
+                            <Grid>
+                              <Box
+                                sx={{
+                                  backgroundColor: "#f0f0f0",
+                                  borderRadius: 2,
+                                  p: 1,
+                                  m: 1,
+                                }}
+                              >
+                                {item.dayOfMessage}
+                              </Box>
+                            </Grid>
+                          </Grid> */}
                         <ListItem
                           sx={{
                             display: "flex",
@@ -404,8 +291,8 @@ function Messages() {
                       fullWidth
                       placeholder="Type a message..."
                       onKeyDown={handlEnter}
-                      onChange={(e) => setTextMessage(e.target.value)}
-                      value={textMessage}
+                      onChange={(e) => setTextMsg(e.target.value)}
+                      value={textMsg}
                       sx={{ fontSize: "1rem" }}
                     />
                     <Button
@@ -421,11 +308,10 @@ function Messages() {
               </Stack>
             </Box>
           </Grid>
-          {/* chat box*/}
         </Grid>
       </Grid>
     </Grid>
   );
-}
+};
 
-export default Messages;
+export default RoomPage;

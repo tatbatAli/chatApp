@@ -6,7 +6,6 @@ import SendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import verificationEmail from "../utils/verificationEmail.js";
 import forgetPwd from "../utils/forgetPwd.js";
-import path from "path";
 
 const router = express.Router();
 const ACCESS_TOKEN_SECRET = process.env.ACCESS_TOKEN_SECRET;
@@ -57,12 +56,12 @@ router.post("/signIn", async (req, res) => {
     res.status(201).json({
       success: true,
       User_Data: newUser,
-      message: "Email Sent To Your Account. Please Verify it",
+      msg: "Email Sent To Your Account. Please Verify it",
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: "Error occurred during sign in",
+      msg: "Error occurred during sign in",
       error: error,
     });
   }
@@ -100,6 +99,7 @@ router.get("/:id/notMe", async (req, res, next) => {
   const id = req.params.id;
   try {
     const user = await User.findOne({ _id: id });
+    console.log(user);
     if (!user) {
       return res.status(404).json({ msg: "User Not Found" });
     }
@@ -112,21 +112,43 @@ router.get("/:id/notMe", async (req, res, next) => {
   }
 });
 
+router.get("/me", async (req, res, next) => {
+  const { authToken } = req.cookies;
+  if (!authToken)
+    return res.status(401).json({ msg: "token invalid, Unauthorized" });
+  try {
+    const decoded = jwt.verify(authToken, REFRESH_TOKEN_SECRET);
+
+    console.log("decode", decoded);
+    res.status(200).json({
+      username: decoded.username,
+      userId: decoded.userId,
+      token: authToken,
+    });
+  } catch (error) {
+    res.status(401).json({ msg: "Invalid token" });
+  }
+});
+
 router.post("/login", async (req, res, next) => {
   const { authToken } = req.cookies;
   const { username, password, email } = req.body;
   if (!username || !password || !email) {
-    return res.status(400).json({ msg: "Missing required fields" });
+    return res
+      .status(400)
+      .json({ success: false, msg: "Missing required fields" });
   }
 
   const foundUser = await User.findOne({ username });
   if (!foundUser) {
-    return res.status(401).json({ msg: "user not found" });
+    return res.status(401).json({ success: false, msg: "user not found" });
   }
 
   const matchPwd = await bcrypt.compare(password, foundUser.password);
   if (!matchPwd) {
-    return res.status(401).json({ msg: "Invalid password" });
+    return res
+      .status(403)
+      .json({ success: false, msg: "password in incorrect" });
   }
   if (!foundUser.verified) {
     const emailToken = jwt.sign({ email: foundUser.email }, verificationToken, {
@@ -148,7 +170,11 @@ router.post("/login", async (req, res, next) => {
     });
   }
 
-  const payload = { username: foundUser.username, email: foundUser.email };
+  const payload = {
+    username: foundUser.username,
+    email: foundUser.email,
+    userId: foundUser._id,
+  };
 
   const accessToken = accessTokenGeneratore(payload);
   const newRefreshToken = refreshTokenGeneratore(payload);
@@ -173,8 +199,10 @@ router.post("/login", async (req, res, next) => {
   res.status(200).json({
     success: true,
     userId: foundUser._id,
-    msg: "login successfully",
+    username: foundUser.username,
+    email: foundUser.email,
     accessToken: accessToken,
+    msg: "login successfully",
   });
 });
 
@@ -212,7 +240,11 @@ router.post("/refreshToken", async (req, res) => {
         .json({ msg: "the refresh token is invalid or it expires" });
     }
 
-    const payload = { username: foundUser.username, email: foundUser.email };
+    const payload = {
+      username: foundUser.username,
+      email: foundUser.email,
+      userId: foundUser._id,
+    };
 
     const accessToken = accessTokenGeneratore(payload);
 

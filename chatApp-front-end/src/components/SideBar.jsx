@@ -9,40 +9,50 @@ import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
 import MailIcon from "@mui/icons-material/Mail";
 import Badge from "@mui/material/Badge";
-import NotificationsIcon from "@mui/icons-material/Notifications";
 import SettingsIcon from "@mui/icons-material/Settings";
 import LogoutIcon from "@mui/icons-material/Logout";
 import Avatar from "@mui/material/Avatar";
 import { Link } from "react-router-dom";
 import HomeIcon from "@mui/icons-material/Home";
+import GroupsIcon from "@mui/icons-material/Groups";
+import { useSelector } from "react-redux";
 
 const drawerWidth = 240;
 
-const arrayIcon = [
-  <Avatar>H</Avatar>,
-  <HomeIcon />,
-  <Badge badgeContent={0} color="primary">
-    <MailIcon />
-  </Badge>,
-  <NotificationsIcon />,
-  <SettingsIcon />,
-];
-
-const items = [
-  { text: "", path: "/" },
-  { text: "Home", path: "/HomePage" },
-  { text: "Messages", path: "/MessagePage" },
-  { text: "Notification", path: "/notifications" },
-  { text: "Settings", path: "/settings" },
-];
-
 function SideBar() {
+  const currentUser = useSelector((state) => state.userSlice.username);
+  const notifCount = useSelector((state) => state.userSlice.notifCount);
+
+  const avatarIcon = (
+    <Avatar sx={{ bgcolor: "primary.main" }}>
+      {currentUser?.charAt(0).toUpperCase()}
+    </Avatar>
+  );
+
+  const arrayIcon = [
+    avatarIcon,
+    <HomeIcon />,
+    <Badge badgeContent={notifCount} color="primary">
+      <MailIcon />
+    </Badge>,
+    <GroupsIcon />,
+    <SettingsIcon />,
+  ];
+
+  const items = [
+    { text: "", path: "/" },
+    { text: "Home", path: "/HomePage" },
+    { text: "Messages", path: "/MessagePage" },
+    { text: "Room", path: "/Room" },
+    { text: "Settings", path: "/Settings" },
+  ];
+
   const drawer = (
     <div>
       <List>
         {items.map((item, index) => (
           <ListItem
-            key={item.text}
+            key={item.text + index}
             component={Link}
             to={item.path}
             sx={{
@@ -53,7 +63,7 @@ function SideBar() {
               },
             }}
           >
-            <ListItemIcon>{arrayIcon[index % arrayIcon.length]}</ListItemIcon>
+            <ListItemIcon>{arrayIcon[index]}</ListItemIcon>
             <ListItemText primary={item.text} />
           </ListItem>
         ))}
