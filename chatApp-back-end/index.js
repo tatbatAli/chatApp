@@ -9,10 +9,10 @@ import messageRoutes from "./routes/messages.js";
 import authRoutes from "./routes/auth.js";
 import userRoutes from "./routes/users.js";
 import verifyJWT from "./middleware/verifyJWT.js";
+import imageRoutes from "./routes/uploadFileImage.js";
 
 dotenv.config();
 const port = process.env.PORT;
-const allowedOrigins = ["http://localhost:5173"];
 
 const app = express();
 const server = http.createServer(app);
@@ -56,7 +56,6 @@ const getUser = (username) => {
 io.on("connection", (socket) => {
   socket.on("register", (username) => {
     register(username, socket.id);
-    console.log(onlineUsers);
     io.emit("online-users", onlineUsers);
   });
 
@@ -86,7 +85,6 @@ io.on("connection", (socket) => {
 
   socket.on("join-room", ({ roomId, username }) => {
     socket.join(roomId);
-    console.log(`${username} joined ${roomName}`);
     socket.to(roomId).emit("user-joined", `${username} has joined`);
   });
 
@@ -101,23 +99,19 @@ io.on("connection", (socket) => {
 
   socket.on("logout", (currentUser) => {
     removeUser(socket.id);
-    console.log(`${currentUser} logged out with the id ${socket.id}`);
     io.emit("online-users", onlineUsers);
   });
 
   socket.on("disconnect", () => {
     removeUser(socket.id);
-    console.log(
-      `user ${socket.id} disconnected, remaining users ${JSON.stringify(
-        onlineUsers
-      )}`
-    );
 
     io.emit("online-users", onlineUsers);
   });
 });
 
+app.use("/uploads", express.static("uploads"));
 app.use("/auth", authRoutes);
+app.use("/uploadImage", verifyJWT, imageRoutes);
 app.use("/messages", verifyJWT, messageRoutes);
 app.use("/users", verifyJWT, userRoutes);
 

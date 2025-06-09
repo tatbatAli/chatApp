@@ -39,6 +39,7 @@ function ResetPwd() {
       const respone = await api.post(`auth/${id}/resetPwd`, resetPwdObject);
       console.log(respone.data.success, respone.data.msg);
       setMessage(respone.data.msg);
+      navigate("/LoginPage");
     } catch (error) {
       console.log("there's an err changing pwd", error);
       setError("Something went wrong!!");

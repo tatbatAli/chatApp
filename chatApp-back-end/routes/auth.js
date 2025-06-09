@@ -2,7 +2,6 @@ import express from "express";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import User from "../modules/Users.js";
-import SendEmail from "../utils/sendEmail.js";
 import crypto from "crypto";
 import verificationEmail from "../utils/verificationEmail.js";
 import forgetPwd from "../utils/forgetPwd.js";
@@ -202,6 +201,9 @@ router.post("/login", async (req, res, next) => {
     username: foundUser.username,
     email: foundUser.email,
     accessToken: accessToken,
+    image: foundUser.image
+      ? `http://localhost:5000/uploads/${foundUser.image}`
+      : null,
     msg: "login successfully",
   });
 });

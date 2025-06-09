@@ -32,7 +32,7 @@ function EmailVerify() {
     <Box>
       {validUrl ? (
         <Box sx={useStyles.container}>
-          <img src="/success.jpeg" alt="success img" />
+          <img src="/success.jpg" alt="success img" />
           <Button
             sx={useStyles.greenBtn}
             variant="contained"

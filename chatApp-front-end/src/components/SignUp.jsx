@@ -79,7 +79,7 @@ function SignUpPage() {
             }}
           >
             <Typography variant="h5" sx={{ fontWeight: 600 }}>
-              Welcome to Our App
+              Welcome to Talka
             </Typography>
             <Typography variant="h6" sx={{ fontWeight: 500 }}>
               Sign Up

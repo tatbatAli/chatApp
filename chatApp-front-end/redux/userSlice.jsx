@@ -6,6 +6,7 @@ const initialState = {
   userId: null,
   email: null,
   token: null,
+  imageUrl: null,
   isAuthenticated: null,
   recentUserId: null,
   notifCount: 0,
@@ -32,6 +33,9 @@ const user = createSlice({
     },
     loginSuccess: (state, action) => {
       state.token = action.payload;
+    },
+    setImageUrl: (state, action) => {
+      state.imageUrl = action.payload;
     },
     authentication: (state, action) => {
       state.isAuthenticated = action.payload;
@@ -78,6 +82,7 @@ export const {
   setUserId,
   setUserEmail,
   loginSuccess,
+  setImageUrl,
   authentication,
   setRecentUserId,
   setOnlineUser,

@@ -22,9 +22,22 @@ const drawerWidth = 240;
 function SideBar() {
   const currentUser = useSelector((state) => state.userSlice.username);
   const notifCount = useSelector((state) => state.userSlice.notifCount);
+  const imageUrl = useSelector((state) => state.userSlice.imageUrl);
 
-  const avatarIcon = (
-    <Avatar sx={{ bgcolor: "primary.main" }}>
+  const avatarIcon = imageUrl ? (
+    <Avatar
+      src={imageUrl}
+      sx={{ width: 64, height: 64 }}
+      imgProps={{
+        style: {
+          objectFit: "cover",
+          width: "100%",
+          height: "100%",
+        },
+      }}
+    />
+  ) : (
+    <Avatar sx={{ bgcolor: "primary.main", width: 64, height: 64 }}>
       {currentUser?.charAt(0).toUpperCase()}
     </Avatar>
   );

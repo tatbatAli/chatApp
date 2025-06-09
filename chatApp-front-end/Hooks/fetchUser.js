@@ -12,7 +12,6 @@ const useFetchUser = () => {
     try {
       const userResponse = await api.get(`users/${id}`);
 
-      console.log("fetch user", userResponse.data);
       return userResponse.data;
     } catch (error) {
       console.log("Error fetching users", error);

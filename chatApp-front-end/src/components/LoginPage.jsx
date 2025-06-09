@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
   loginSuccess,
+  setImageUrl,
   setUser,
   setUserEmail,
   setUserId,
@@ -45,6 +46,7 @@ function LoginPage() {
         dispatch(setUserId(loginData.userId));
         dispatch(setUserEmail(loginData.email));
         dispatch(setUser(loginData.username));
+        dispatch(setImageUrl(loginData.image));
         setSuccessMsg(loginData.msg);
         navigate("/HomePage");
       } else {

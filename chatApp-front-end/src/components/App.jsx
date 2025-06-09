@@ -15,6 +15,7 @@ import { useSelector, useDispatch } from "react-redux";
 import {
   authentication,
   loginSuccess,
+  setImageUrl,
   setOnlineUser,
   setUser,
   setUserId,
@@ -26,6 +27,9 @@ import api from "../api/api";
 function App() {
   const currentUser = useSelector((state) => state.userSlice.username);
   const accessToken = useSelector((state) => state.userSlice.token);
+  const isAuthenticated = useSelector(
+    (state) => state.userSlice.isAuthenticated
+  );
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -35,16 +39,31 @@ function App() {
         const response = await api.get("/auth/me");
         const userData = response.data;
 
-        console.log(userData);
-
         dispatch(setUser(userData.username));
         dispatch(setUserId(userData.userId));
         dispatch(loginSuccess(userData.token));
         dispatch(authentication(true));
 
+        console.log("=== Avatar Request Debug ===");
+        console.log("About to request avatar...");
+        console.log("User token:", userData.token ? "exists" : "missing");
+        console.log("Token length:", userData.token?.length);
+
+        try {
+          const profileImg = await api.get("/uploadImage/getAvatar");
+          const fullImageUrl = api.defaults.baseURL + profileImg.data.image;
+          console.log("full image url", fullImageUrl);
+          dispatch(setImageUrl(fullImageUrl));
+        } catch (avatarError) {
+          console.log("❌ Avatar request failed:");
+          console.log("Error status:", avatarError.response?.status);
+          console.log("Error message:", avatarError.response?.data);
+          console.log("Full error:", avatarError);
+        }
+
         navigate("/HomePage");
       } catch (error) {
-        console.log("No Authentification", error);
+        console.log("❌ Main auth error:", error);
         dispatch(setUser(null));
         dispatch(setUserId(null));
         dispatch(authentication(false));

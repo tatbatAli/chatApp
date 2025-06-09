@@ -76,7 +76,7 @@ function HomePage() {
           }}
         >
           <Typography variant="h5" fontWeight="bold">
-            👋 Welcome to Our Chat App
+            👋 Welcome to Talka
           </Typography>
           {!isAuthenticated && (
             <Box>
